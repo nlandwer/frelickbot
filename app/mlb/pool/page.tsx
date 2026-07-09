@@ -153,101 +153,117 @@ export default function PoolOptimizerPage() {
       </div>
 
       {/* Input Section */}
-      <div className="mb-8 rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm p-6">
-        <h3 className="mb-6 text-lg font-semibold text-foreground">Game Inputs</h3>
+      <div className="mb-8 space-y-6">
+        <h3 className="text-lg font-semibold text-foreground">Game Inputs</h3>
         
-        <div className="space-y-6">
-          {games.map((game, idx) => (
-            <div key={game.id} className="space-y-4 rounded-lg border border-border/20 bg-muted/5 p-4">
-              <div className="flex items-center gap-4">
-                <span className="text-sm font-semibold text-muted-foreground min-w-fit">Game {idx + 1}</span>
+        {games.map((game, idx) => (
+          <div key={game.id} className="rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm p-6">
+            {/* Game Header */}
+            <h4 className="mb-6 text-base font-semibold text-foreground">Game {idx + 1}</h4>
+            
+            {/* Team Headers */}
+            <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="text-sm font-semibold text-emerald-400">Team A</div>
+              <div className="text-sm font-semibold text-emerald-400">Team B</div>
+            </div>
+
+            {/* Separator */}
+            <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="h-0.5 bg-border/40"></div>
+              <div className="h-0.5 bg-border/40"></div>
+            </div>
+
+            {/* Team Name Row */}
+            <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-xs font-medium text-muted-foreground uppercase tracking-wide">Team Name</label>
+                <input
+                  type="text"
+                  value={game.teamAName}
+                  onChange={(e) => handleGameNameChange(game.id, 'teamAName', e.target.value)}
+                  placeholder="e.g., CIN"
+                  className="w-full rounded border border-border/40 bg-muted/30 px-3 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
+                />
               </div>
-
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-6">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-muted-foreground">Team A</label>
-                  <input
-                    type="text"
-                    value={game.teamAName}
-                    onChange={(e) => handleGameNameChange(game.id, 'teamAName', e.target.value)}
-                    placeholder="e.g., CIN"
-                    className="w-full rounded border border-border/40 bg-muted/30 px-2 py-1.5 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-muted-foreground">Team B</label>
-                  <input
-                    type="text"
-                    value={game.teamBName}
-                    onChange={(e) => handleGameNameChange(game.id, 'teamBName', e.target.value)}
-                    placeholder="e.g., MIL"
-                    className="w-full rounded border border-border/40 bg-muted/30 px-2 py-1.5 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-muted-foreground">A Odds</label>
-                  <input
-                    type="number"
-                    value={game.teamAOdds}
-                    onChange={(e) => handleGameChange(game.id, 'teamAOdds', e.target.value)}
-                    placeholder="-110"
-                    step="1"
-                    className="w-full rounded border border-border/40 bg-muted/30 px-2 py-1.5 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-muted-foreground">A %</label>
-                  <input
-                    type="number"
-                    value={game.teamAPercent}
-                    onChange={(e) => handleGameChange(game.id, 'teamAPercent', e.target.value)}
-                    placeholder="50"
-                    step="1"
-                    min="0"
-                    max="100"
-                    className="w-full rounded border border-border/40 bg-muted/30 px-2 py-1.5 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-muted-foreground">B Odds</label>
-                  <input
-                    type="number"
-                    value={game.teamBOdds}
-                    onChange={(e) => handleGameChange(game.id, 'teamBOdds', e.target.value)}
-                    placeholder="-110"
-                    step="1"
-                    className="w-full rounded border border-border/40 bg-muted/30 px-2 py-1.5 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-muted-foreground">B %</label>
-                  <input
-                    type="number"
-                    value={game.teamBPercent}
-                    onChange={(e) => handleGameChange(game.id, 'teamBPercent', e.target.value)}
-                    placeholder="50"
-                    step="1"
-                    min="0"
-                    max="100"
-                    className="w-full rounded border border-border/40 bg-muted/30 px-2 py-1.5 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50"
-                  />
-                </div>
+              <div>
+                <label className="mb-2 block text-xs font-medium text-muted-foreground uppercase tracking-wide">Team Name</label>
+                <input
+                  type="text"
+                  value={game.teamBName}
+                  onChange={(e) => handleGameNameChange(game.id, 'teamBName', e.target.value)}
+                  placeholder="e.g., NYY"
+                  className="w-full rounded border border-border/40 bg-muted/30 px-3 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
+                />
               </div>
             </div>
-          ))}
-        </div>
 
-        <button
-          onClick={handleCalculate}
-          className="mt-6 w-full rounded-lg bg-emerald-400/20 px-4 py-3 font-semibold text-emerald-400 border border-emerald-400/50 hover:bg-emerald-400/30 transition-colors"
-        >
-          Calculate Results
-        </button>
+            {/* Odds Row */}
+            <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-xs font-medium text-muted-foreground uppercase tracking-wide">Odds</label>
+                <input
+                  type="number"
+                  value={game.teamAOdds}
+                  onChange={(e) => handleGameChange(game.id, 'teamAOdds', e.target.value)}
+                  placeholder="-110"
+                  step="1"
+                  className="w-full rounded border border-border/40 bg-muted/30 px-3 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
+                />
+              </div>
+              <div>
+                <label className="mb-2 block text-xs font-medium text-muted-foreground uppercase tracking-wide">Odds</label>
+                <input
+                  type="number"
+                  value={game.teamBOdds}
+                  onChange={(e) => handleGameChange(game.id, 'teamBOdds', e.target.value)}
+                  placeholder="-110"
+                  step="1"
+                  className="w-full rounded border border-border/40 bg-muted/30 px-3 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
+                />
+              </div>
+            </div>
+
+            {/* Pick % Row */}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-xs font-medium text-muted-foreground uppercase tracking-wide">Win %</label>
+                <input
+                  type="number"
+                  value={game.teamAPercent}
+                  onChange={(e) => handleGameChange(game.id, 'teamAPercent', e.target.value)}
+                  placeholder="50"
+                  step="1"
+                  min="0"
+                  max="100"
+                  className="w-full rounded border border-border/40 bg-muted/30 px-3 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
+                />
+              </div>
+              <div>
+                <label className="mb-2 block text-xs font-medium text-muted-foreground uppercase tracking-wide">Win %</label>
+                <input
+                  type="number"
+                  value={game.teamBPercent}
+                  onChange={(e) => handleGameChange(game.id, 'teamBPercent', e.target.value)}
+                  placeholder="50"
+                  step="1"
+                  min="0"
+                  max="100"
+                  className="w-full rounded border border-border/40 bg-muted/30 px-3 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
+                />
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {/* Calculate Button */}
+        <div className="flex justify-center pt-4">
+          <button
+            onClick={handleCalculate}
+            className="rounded-lg bg-gradient-to-r from-purple-500 to-emerald-400 px-8 py-3 font-semibold text-white hover:shadow-lg hover:shadow-purple-500/50 transition-all hover:scale-105"
+          >
+            Calculate Results
+          </button>
+        </div>
       </div>
 
       {/* Results Section - Only shown after calculate */}
