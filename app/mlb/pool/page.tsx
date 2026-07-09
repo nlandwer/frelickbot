@@ -264,155 +264,154 @@ export default function PoolOptimizerPage() {
 
           {/* Table */}
           <div className="rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="sticky top-0 z-10 bg-muted/30 border-b border-border/40 overflow-x-auto">
+              <div 
+                className="grid gap-0 px-4 py-3 text-sm font-semibold text-foreground"
+                style={{
+                  gridTemplateColumns: '70px 220px 110px 110px 110px 110px 110px',
+                  minWidth: 'fit-content'
+                }}
+              >
+                <div className="flex items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors rounded px-1 py-1" onClick={() => handleSort('entry')}>
+                  Rank
+                </div>
+                <div className="flex items-center cursor-pointer hover:bg-muted/50 transition-colors rounded px-1 py-1 overflow-hidden" onClick={() => handleSort('entry')}>
+                  <div className="flex items-center gap-2">
+                    Entry
+                    {sortColumn === 'entry' && (sortDirection === 'desc' ? <ChevronDown size={16} /> : <ChevronUp size={16} />)}
+                  </div>
+                </div>
+                <div className="flex items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors rounded px-1 py-1" onClick={() => handleSort('win4_4')}>
+                  <div className="flex items-center justify-center gap-2">
+                    4/4 Win %
+                    {sortColumn === 'win4_4' && (sortDirection === 'desc' ? <ChevronDown size={16} /> : <ChevronUp size={16} />)}
+                  </div>
+                </div>
+                <div className="flex items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors rounded px-1 py-1" onClick={() => handleSort('win3_4')}>
+                  <div className="flex items-center justify-center gap-2">
+                    3/4 Win %
+                    {sortColumn === 'win3_4' && (sortDirection === 'desc' ? <ChevronDown size={16} /> : <ChevronUp size={16} />)}
+                  </div>
+                </div>
+                <div className="flex items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors rounded px-1 py-1" onClick={() => handleSort('poolEV')}>
+                  <div className="flex items-center justify-center gap-2">
+                    Pool EV
+                    {sortColumn === 'poolEV' && (sortDirection === 'desc' ? <ChevronDown size={16} /> : <ChevronUp size={16} />)}
+                  </div>
+                </div>
+                <div className="flex items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors rounded px-1 py-1" onClick={() => handleSort('gameEV')}>
+                  <div className="flex items-center justify-center gap-2">
+                    Game EV
+                    {sortColumn === 'gameEV' && (sortDirection === 'desc' ? <ChevronDown size={16} /> : <ChevronUp size={16} />)}
+                  </div>
+                </div>
+                <div className="flex items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors rounded px-1 py-1" onClick={() => handleSort('totalEV')}>
+                  <div className="flex items-center justify-center gap-2">
+                    Total EV
+                    {sortColumn === 'totalEV' && (sortDirection === 'desc' ? <ChevronDown size={16} /> : <ChevronUp size={16} />)}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Body */}
             <div className="overflow-x-auto flex-1">
-              <table className="w-full text-sm">
-                <thead className="sticky top-0 z-10 bg-muted/30 border-b border-border/40">
-                  <tr>
-                    <th
-                      className="px-4 py-3 text-left font-semibold text-foreground cursor-pointer hover:bg-muted/50 transition-colors"
-                      onClick={() => handleSort('entry')}
-                    >
-                      <div className="flex items-center gap-2">
-                        Entry
-                        {sortColumn === 'entry' && (sortDirection === 'desc' ? <ChevronDown size={16} /> : <ChevronUp size={16} />)}
-                      </div>
-                    </th>
-                    <th
-                      className="px-4 py-3 text-right font-semibold text-foreground cursor-pointer hover:bg-muted/50 transition-colors"
-                      onClick={() => handleSort('win4_4')}
-                    >
-                      <div className="flex items-center justify-end gap-2">
-                        4/4 Win %
-                        {sortColumn === 'win4_4' && (sortDirection === 'desc' ? <ChevronDown size={16} /> : <ChevronUp size={16} />)}
-                      </div>
-                    </th>
-                    <th
-                      className="px-4 py-3 text-right font-semibold text-foreground cursor-pointer hover:bg-muted/50 transition-colors"
-                      onClick={() => handleSort('win3_4')}
-                    >
-                      <div className="flex items-center justify-end gap-2">
-                        3/4 Win %
-                        {sortColumn === 'win3_4' && (sortDirection === 'desc' ? <ChevronDown size={16} /> : <ChevronUp size={16} />)}
-                      </div>
-                    </th>
-                    <th
-                      className="px-4 py-3 text-right font-semibold text-foreground cursor-pointer hover:bg-muted/50 transition-colors"
-                      onClick={() => handleSort('poolEV')}
-                    >
-                      <div className="flex items-center justify-end gap-2">
-                        Pool EV
-                        {sortColumn === 'poolEV' && (sortDirection === 'desc' ? <ChevronDown size={16} /> : <ChevronUp size={16} />)}
-                      </div>
-                    </th>
-                    <th
-                      className="px-4 py-3 text-right font-semibold text-foreground cursor-pointer hover:bg-muted/50 transition-colors"
-                      onClick={() => handleSort('gameEV')}
-                    >
-                      <div className="flex items-center justify-end gap-2">
-                        Game EV
-                        {sortColumn === 'gameEV' && (sortDirection === 'desc' ? <ChevronDown size={16} /> : <ChevronUp size={16} />)}
-                      </div>
-                    </th>
-                    <th
-                      className="px-4 py-3 text-right font-semibold text-foreground cursor-pointer hover:bg-muted/50 transition-colors"
-                      onClick={() => handleSort('totalEV')}
-                    >
-                      <div className="flex items-center justify-end gap-2">
-                        Total EV
-                        {sortColumn === 'totalEV' && (sortDirection === 'desc' ? <ChevronDown size={16} /> : <ChevronUp size={16} />)}
-                      </div>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedEntries.map((entry) => {
-                    const isExpanded = expandedEntryId === entry.id
-                    const isHighestEV = entry.id === highestTotalEVId
+              <div className="divide-y divide-border/40">
+                {sortedEntries.map((entry, rank) => {
+                  const isExpanded = expandedEntryId === entry.id
+                  const isHighestEV = entry.id === highestTotalEVId
 
-                    return (
-                      <tbody key={entry.id}>
-                        <tr
-                          className={`border-b border-border/40 transition-colors cursor-pointer hover:bg-muted/20 ${
-                            isHighestEV ? 'bg-amber-500/10 border-l-4 border-l-amber-400' : ''
-                          }`}
-                          onClick={() => setExpandedEntryId(isExpanded ? null : entry.id)}
-                        >
-                          <td className="px-4 py-3">
-                            <code className="text-sm text-muted-foreground">{formatPoolEntry(entry.picks)}</code>
-                          </td>
-                          <td className="px-4 py-3 text-right text-muted-foreground">
-                            {(entry.winProbability * 100).toFixed(1)}%
-                          </td>
-                          <td className="px-4 py-3 text-right text-muted-foreground">
-                            {(entry.winAt3 * 100).toFixed(1)}%
-                          </td>
-                          <td className={`px-4 py-3 text-right font-medium ${entry.poolEV > 0 ? 'text-emerald-400' : entry.poolEV < 0 ? 'text-red-400' : 'text-muted-foreground'}`}>
-                            {entry.poolEV > 0 ? '+' : ''}
-                            {(entry.poolEV * 100).toFixed(1)}%
-                          </td>
-                          <td className={`px-4 py-3 text-right font-medium ${entry.gameEV > 0 ? 'text-emerald-400' : entry.gameEV < 0 ? 'text-red-400' : 'text-muted-foreground'}`}>
-                            {entry.gameEV > 0 ? '+' : ''}
-                            {(entry.gameEV * 100).toFixed(1)}%
-                          </td>
-                          <td className={`px-4 py-3 text-right font-semibold ${entry.totalEV > 0 ? 'text-emerald-400' : entry.totalEV < 0 ? 'text-red-400' : 'text-muted-foreground'}`}>
-                            {entry.totalEV > 0 ? '+' : ''}
-                            {(entry.totalEV * 100).toFixed(1)}%
-                          </td>
-                        </tr>
+                  return (
+                    <div key={entry.id}>
+                      <div
+                        className={`grid gap-0 px-4 py-3 text-sm transition-colors cursor-pointer hover:bg-muted/20 ${
+                          isHighestEV ? 'bg-amber-500/10 border-l-4 border-l-amber-400' : ''
+                        }`}
+                        style={{
+                          gridTemplateColumns: '70px 220px 110px 110px 110px 110px 110px',
+                          minWidth: 'fit-content'
+                        }}
+                        onClick={() => setExpandedEntryId(isExpanded ? null : entry.id)}
+                      >
+                        <div className="flex items-center justify-center text-muted-foreground">
+                          {rank + 1}
+                        </div>
+                        <div className="flex items-center overflow-hidden">
+                          <code className="text-sm text-muted-foreground truncate" title={formatPoolEntry(entry.picks)}>
+                            {formatPoolEntry(entry.picks)}
+                          </code>
+                        </div>
+                        <div className="flex items-center justify-center text-muted-foreground">
+                          {(entry.winProbability * 100).toFixed(1)}%
+                        </div>
+                        <div className="flex items-center justify-center text-muted-foreground">
+                          {(entry.winAt3 * 100).toFixed(1)}%
+                        </div>
+                        <div className={`flex items-center justify-center font-medium ${entry.poolEV > 0 ? 'text-emerald-400' : entry.poolEV < 0 ? 'text-red-400' : 'text-muted-foreground'}`}>
+                          {entry.poolEV > 0 ? '+' : ''}
+                          {(entry.poolEV * 100).toFixed(1)}%
+                        </div>
+                        <div className={`flex items-center justify-center font-medium ${entry.gameEV > 0 ? 'text-emerald-400' : entry.gameEV < 0 ? 'text-red-400' : 'text-muted-foreground'}`}>
+                          {entry.gameEV > 0 ? '+' : ''}
+                          {(entry.gameEV * 100).toFixed(1)}%
+                        </div>
+                        <div className={`flex items-center justify-center font-semibold ${entry.totalEV > 0 ? 'text-emerald-400' : entry.totalEV < 0 ? 'text-red-400' : 'text-muted-foreground'}`}>
+                          {entry.totalEV > 0 ? '+' : ''}
+                          {(entry.totalEV * 100).toFixed(1)}%
+                        </div>
+                      </div>
 
-                        {/* Expanded Row */}
-                        {isExpanded && (
-                          <tr className="border-b border-border/40 bg-muted/10">
-                            <td colSpan={6} className="px-4 py-4">
-                              <div className="space-y-4">
-                                {entry.picks.map((pick, idx) => (
-                                  <div key={idx} className="space-y-1">
-                                    <p className="text-sm font-semibold text-foreground">
-                                      Game {idx + 1}
-                                    </p>
-                                    <div className="ml-4 space-y-0.5 text-sm text-muted-foreground">
-                                      <p>
-                                        Pick: <span className="text-foreground font-medium">{pick.teamName}</span>
-                                      </p>
-                                      <p>
-                                        Wager: <span className="text-foreground font-medium">${pick.wager}</span>
-                                      </p>
-                                    </div>
-                                  </div>
-                                ))}
-
-                                <div className="border-t border-border/40 pt-4 mt-4 space-y-1 text-sm">
+                      {/* Expanded Row */}
+                      {isExpanded && (
+                        <div className="bg-muted/10 border-t border-border/40 px-4 py-4">
+                          <div className="space-y-4">
+                            {entry.picks.map((pick, idx) => (
+                              <div key={idx} className="space-y-1">
+                                <p className="text-sm font-semibold text-foreground">
+                                  Game {idx + 1}
+                                </p>
+                                <div className="ml-4 space-y-0.5 text-sm text-muted-foreground">
                                   <p>
-                                    Game EV:{' '}
-                                    <span className={`font-medium ${entry.gameEV > 0 ? 'text-emerald-400' : entry.gameEV < 0 ? 'text-red-400' : 'text-muted-foreground'}`}>
-                                      {entry.gameEV > 0 ? '+' : ''}
-                                      {(entry.gameEV * 100).toFixed(1)}%
-                                    </span>
+                                    Pick: <span className="text-foreground font-medium">{pick.teamName}</span>
                                   </p>
                                   <p>
-                                    Pool EV:{' '}
-                                    <span className={`font-medium ${entry.poolEV > 0 ? 'text-emerald-400' : entry.poolEV < 0 ? 'text-red-400' : 'text-muted-foreground'}`}>
-                                      {entry.poolEV > 0 ? '+' : ''}
-                                      {(entry.poolEV * 100).toFixed(1)}%
-                                    </span>
-                                  </p>
-                                  <p>
-                                    Total EV:{' '}
-                                    <span className={`font-medium ${entry.totalEV > 0 ? 'text-emerald-400' : entry.totalEV < 0 ? 'text-red-400' : 'text-muted-foreground'}`}>
-                                      {entry.totalEV > 0 ? '+' : ''}
-                                      {(entry.totalEV * 100).toFixed(1)}%
-                                    </span>
+                                    Wager: <span className="text-foreground font-medium">${pick.wager}</span>
                                   </p>
                                 </div>
                               </div>
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    )
-                  })}
-                </tbody>
-              </table>
+                            ))}
+
+                            <div className="border-t border-border/40 pt-4 mt-4 space-y-1 text-sm">
+                              <p>
+                                Game EV:{' '}
+                                <span className={`font-medium ${entry.gameEV > 0 ? 'text-emerald-400' : entry.gameEV < 0 ? 'text-red-400' : 'text-muted-foreground'}`}>
+                                  {entry.gameEV > 0 ? '+' : ''}
+                                  {(entry.gameEV * 100).toFixed(1)}%
+                                </span>
+                              </p>
+                              <p>
+                                Pool EV:{' '}
+                                <span className={`font-medium ${entry.poolEV > 0 ? 'text-emerald-400' : entry.poolEV < 0 ? 'text-red-400' : 'text-muted-foreground'}`}>
+                                  {entry.poolEV > 0 ? '+' : ''}
+                                  {(entry.poolEV * 100).toFixed(1)}%
+                                </span>
+                              </p>
+                              <p>
+                                Total EV:{' '}
+                                <span className={`font-medium ${entry.totalEV > 0 ? 'text-emerald-400' : entry.totalEV < 0 ? 'text-red-400' : 'text-muted-foreground'}`}>
+                                  {entry.totalEV > 0 ? '+' : ''}
+                                  {(entry.totalEV * 100).toFixed(1)}%
+                                </span>
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
             </div>
 
             {/* Footer */}
