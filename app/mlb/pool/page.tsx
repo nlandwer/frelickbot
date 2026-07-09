@@ -6,60 +6,36 @@ import { ChevronUp, ChevronDown } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
-// Mock game data for now
-const MOCK_GAMES: Game[] = [
-  {
-    id: 'game1',
-    team1Name: 'CIN',
-    team2Name: 'MIL',
-    team1Odds: -110,
-    team2Odds: -110,
-    ballparkWinPercent: 52.5,
-    realTeam1Odds: -110,
-    realTeam2Odds: -110,
-  },
-  {
-    id: 'game2',
-    team1Name: 'NYY',
-    team2Name: 'BOS',
-    team1Odds: -120,
-    team2Odds: +100,
-    ballparkWinPercent: 55.0,
-    realTeam1Odds: -120,
-    realTeam2Odds: +100,
-  },
-  {
-    id: 'game3',
-    team1Name: 'LAD',
-    team2Name: 'SD',
-    team1Odds: -110,
-    team2Odds: -110,
-    ballparkWinPercent: 50.5,
-    realTeam1Odds: -110,
-    realTeam2Odds: -110,
-  },
-  {
-    id: 'game4',
-    team1Name: 'HOU',
-    team2Name: 'TEX',
-    team1Odds: -115,
-    team2Odds: -105,
-    ballparkWinPercent: 54.0,
-    realTeam1Odds: -115,
-    realTeam2Odds: -105,
-  },
-]
-
-type SortColumn = 'entry' | 'winPercent' | 'win3_4' | 'expectedWinners' | 'expectedPayout' | 'poolEV' | 'gameEV' | 'totalEV'
+type SortColumn = 'entry' | 'win4_4' | 'win3_4' | 'poolEV' | 'gameEV' | 'totalEV'
 type SortDirection = 'asc' | 'desc'
 
+const EMPTY_GAME: Game = {
+  id: '',
+  teamAName: '',
+  teamBName: '',
+  teamAOdds: -110,
+  teamBOdds: -110,
+  teamAPercent: 50,
+  teamBPercent: 50,
+}
+
 export default function PoolOptimizerPage() {
+  const [games, setGames] = useState<Game[]>([
+    { ...EMPTY_GAME, id: '1' },
+    { ...EMPTY_GAME, id: '2' },
+    { ...EMPTY_GAME, id: '3' },
+    { ...EMPTY_GAME, id: '4' },
+  ])
+  const [calculated, setCalculated] = useState(false)
   const [sortColumn, setSortColumn] = useState<SortColumn>('totalEV')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
   const [expandedEntryId, setExpandedEntryId] = useState<string | null>(null)
 
-  // Generate all pool entries
-  const allEntries = useMemo(() => generatePoolEntries(MOCK_GAMES), [])
+  // Generate entries only after calculate is pressed
+  const allEntries = useMemo(() => {
+    if (!calculated) return []
+    return generatePoolEntries(games)
+  }, [games, calculated])
 
   // Sort entries
   const sortedEntries = useMemo(() => {
@@ -72,21 +48,13 @@ export default function PoolOptimizerPage() {
           return sortDirection === 'asc'
             ? formatPoolEntry(a.picks).localeCompare(formatPoolEntry(b.picks))
             : formatPoolEntry(b.picks).localeCompare(formatPoolEntry(a.picks))
-        case 'winPercent':
+        case 'win4_4':
           aVal = a.winProbability
           bVal = b.winProbability
           break
         case 'win3_4':
           aVal = a.winAt3
           bVal = b.winAt3
-          break
-        case 'expectedWinners':
-          aVal = a.expectedWinners
-          bVal = b.expectedWinners
-          break
-        case 'expectedPayout':
-          aVal = a.expectedPayout
-          bVal = b.expectedPayout
           break
         case 'poolEV':
           aVal = a.poolEV
@@ -111,12 +79,21 @@ export default function PoolOptimizerPage() {
 
   // Calculate statistics
   const stats = useMemo(() => {
+    if (allEntries.length === 0) {
+      return {
+        totalCombinations: 0,
+        highestTotalEV: 0,
+        avgTotalEV: 0,
+        highestGameEV: 0,
+        highestPoolEV: 0,
+      }
+    }
+
     const totalCombinations = allEntries.length
     const highestTotalEV = Math.max(...allEntries.map((e) => e.totalEV))
     const avgTotalEV = allEntries.reduce((sum, e) => sum + e.totalEV, 0) / allEntries.length
     const highestGameEV = Math.max(...allEntries.map((e) => e.gameEV))
     const highestPoolEV = Math.max(...allEntries.map((e) => e.poolEV))
-    const bestExpectedPayout = Math.max(...allEntries.map((e) => e.expectedPayout))
 
     return {
       totalCombinations,
@@ -124,7 +101,6 @@ export default function PoolOptimizerPage() {
       avgTotalEV,
       highestGameEV,
       highestPoolEV,
-      bestExpectedPayout,
     }
   }, [allEntries])
 
@@ -137,7 +113,33 @@ export default function PoolOptimizerPage() {
     }
   }
 
-  const highestTotalEVId = sortedEntries.find((e) => e.totalEV === stats.highestTotalEV)?.id
+  const handleGameChange = (gameId: string, field: string, value: string | number) => {
+    setGames(games.map(g => {
+      if (g.id === gameId) {
+        const numValue = typeof value === 'string' ? parseFloat(value) || 0 : value
+        return { ...g, [field]: numValue }
+      }
+      return g
+    }))
+  }
+
+  const handleGameNameChange = (gameId: string, field: string, value: string) => {
+    setGames(games.map(g => {
+      if (g.id === gameId) {
+        return { ...g, [field]: value }
+      }
+      return g
+    }))
+  }
+
+  const handleCalculate = () => {
+    setCalculated(true)
+    setExpandedEntryId(null)
+  }
+
+  const highestTotalEVId = sortedEntries.length > 0 
+    ? sortedEntries.find((e) => e.totalEV === stats.highestTotalEV)?.id 
+    : null
 
   return (
     <>
@@ -146,203 +148,280 @@ export default function PoolOptimizerPage() {
           MLB · Pool Optimizer
         </h2>
         <p className="mt-1 text-sm text-muted-foreground text-pretty">
-          Generate and analyze all possible pool entries for maximum EV.
+          Generate and analyze all possible pool entries.
         </p>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">
-        <StatCard label="Total Combinations" value={stats.totalCombinations.toLocaleString()} />
-        <StatCard label="Highest Total EV" value={`${stats.highestTotalEV > 0 ? '+' : ''}${(stats.highestTotalEV * 100).toFixed(1)}%`} />
-        <StatCard label="Average Total EV" value={`${stats.avgTotalEV > 0 ? '+' : ''}${(stats.avgTotalEV * 100).toFixed(1)}%`} />
-        <StatCard label="Highest Game EV" value={`${stats.highestGameEV > 0 ? '+' : ''}${(stats.highestGameEV * 100).toFixed(1)}%`} />
-        <StatCard label="Highest Pool EV" value={`${stats.highestPoolEV > 0 ? '+' : ''}${(stats.highestPoolEV * 100).toFixed(1)}%`} />
-        <StatCard label="Best Expected Payout" value={`$${stats.bestExpectedPayout.toFixed(2)}`} />
+      {/* Input Section */}
+      <div className="mb-8 rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm p-6">
+        <h3 className="mb-6 text-lg font-semibold text-foreground">Game Inputs</h3>
+        
+        <div className="space-y-6">
+          {games.map((game, idx) => (
+            <div key={game.id} className="space-y-4 rounded-lg border border-border/20 bg-muted/5 p-4">
+              <div className="flex items-center gap-4">
+                <span className="text-sm font-semibold text-muted-foreground min-w-fit">Game {idx + 1}</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-6">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">Team A</label>
+                  <input
+                    type="text"
+                    value={game.teamAName}
+                    onChange={(e) => handleGameNameChange(game.id, 'teamAName', e.target.value)}
+                    placeholder="e.g., CIN"
+                    className="w-full rounded border border-border/40 bg-muted/30 px-2 py-1.5 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">Team B</label>
+                  <input
+                    type="text"
+                    value={game.teamBName}
+                    onChange={(e) => handleGameNameChange(game.id, 'teamBName', e.target.value)}
+                    placeholder="e.g., MIL"
+                    className="w-full rounded border border-border/40 bg-muted/30 px-2 py-1.5 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">A Odds</label>
+                  <input
+                    type="number"
+                    value={game.teamAOdds}
+                    onChange={(e) => handleGameChange(game.id, 'teamAOdds', e.target.value)}
+                    placeholder="-110"
+                    step="1"
+                    className="w-full rounded border border-border/40 bg-muted/30 px-2 py-1.5 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">A %</label>
+                  <input
+                    type="number"
+                    value={game.teamAPercent}
+                    onChange={(e) => handleGameChange(game.id, 'teamAPercent', e.target.value)}
+                    placeholder="50"
+                    step="1"
+                    min="0"
+                    max="100"
+                    className="w-full rounded border border-border/40 bg-muted/30 px-2 py-1.5 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">B Odds</label>
+                  <input
+                    type="number"
+                    value={game.teamBOdds}
+                    onChange={(e) => handleGameChange(game.id, 'teamBOdds', e.target.value)}
+                    placeholder="-110"
+                    step="1"
+                    className="w-full rounded border border-border/40 bg-muted/30 px-2 py-1.5 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">B %</label>
+                  <input
+                    type="number"
+                    value={game.teamBPercent}
+                    onChange={(e) => handleGameChange(game.id, 'teamBPercent', e.target.value)}
+                    placeholder="50"
+                    step="1"
+                    min="0"
+                    max="100"
+                    className="w-full rounded border border-border/40 bg-muted/30 px-2 py-1.5 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50"
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <button
+          onClick={handleCalculate}
+          className="mt-6 w-full rounded-lg bg-emerald-400/20 px-4 py-3 font-semibold text-emerald-400 border border-emerald-400/50 hover:bg-emerald-400/30 transition-colors"
+        >
+          Calculate Results
+        </button>
       </div>
 
-      {/* Table */}
-      <div className="rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm overflow-hidden flex flex-col">
-        <div className="overflow-x-auto flex-1">
-          <table className="w-full text-sm">
-            <thead className="sticky top-0 z-10 bg-muted/30 border-b border-border/40">
-              <tr>
-                <th
-                  className="px-4 py-3 text-left font-semibold text-foreground cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleSort('entry')}
-                >
-                  <div className="flex items-center gap-2">
-                    Entry
-                    {sortColumn === 'entry' && (sortDirection === 'desc' ? <ChevronDown size={16} /> : <ChevronUp size={16} />)}
-                  </div>
-                </th>
-                <th
-                  className="px-4 py-3 text-right font-semibold text-foreground cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleSort('winPercent')}
-                >
-                  <div className="flex items-center justify-end gap-2">
-                    Win %
-                    {sortColumn === 'winPercent' && (sortDirection === 'desc' ? <ChevronDown size={16} /> : <ChevronUp size={16} />)}
-                  </div>
-                </th>
-                <th
-                  className="px-4 py-3 text-right font-semibold text-foreground cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleSort('win3_4')}
-                >
-                  <div className="flex items-center justify-end gap-2">
-                    3/4 Win %
-                    {sortColumn === 'win3_4' && (sortDirection === 'desc' ? <ChevronDown size={16} /> : <ChevronUp size={16} />)}
-                  </div>
-                </th>
-                <th
-                  className="px-4 py-3 text-right font-semibold text-foreground cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleSort('expectedWinners')}
-                >
-                  <div className="flex items-center justify-end gap-2">
-                    Expected Winners
-                    {sortColumn === 'expectedWinners' && (sortDirection === 'desc' ? <ChevronDown size={16} /> : <ChevronUp size={16} />)}
-                  </div>
-                </th>
-                <th
-                  className="px-4 py-3 text-right font-semibold text-foreground cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleSort('expectedPayout')}
-                >
-                  <div className="flex items-center justify-end gap-2">
-                    Expected Payout
-                    {sortColumn === 'expectedPayout' && (sortDirection === 'desc' ? <ChevronDown size={16} /> : <ChevronUp size={16} />)}
-                  </div>
-                </th>
-                <th
-                  className="px-4 py-3 text-right font-semibold text-foreground cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleSort('poolEV')}
-                >
-                  <div className="flex items-center justify-end gap-2">
-                    Pool EV
-                    {sortColumn === 'poolEV' && (sortDirection === 'desc' ? <ChevronDown size={16} /> : <ChevronUp size={16} />)}
-                  </div>
-                </th>
-                <th
-                  className="px-4 py-3 text-right font-semibold text-foreground cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleSort('gameEV')}
-                >
-                  <div className="flex items-center justify-end gap-2">
-                    Game EV
-                    {sortColumn === 'gameEV' && (sortDirection === 'desc' ? <ChevronDown size={16} /> : <ChevronUp size={16} />)}
-                  </div>
-                </th>
-                <th
-                  className="px-4 py-3 text-right font-semibold text-foreground cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleSort('totalEV')}
-                >
-                  <div className="flex items-center justify-end gap-2">
-                    Total EV
-                    {sortColumn === 'totalEV' && (sortDirection === 'desc' ? <ChevronDown size={16} /> : <ChevronUp size={16} />)}
-                  </div>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedEntries.map((entry, visibleIndex) => {
-                const rank = sortedEntries.indexOf(entry) + 1
-                const isExpanded = expandedEntryId === entry.id
-                const isHighestEV = entry.id === highestTotalEVId
+      {/* Results Section - Only shown after calculate */}
+      {calculated && (
+        <>
+          {/* Statistics Cards */}
+          <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <StatCard label="Total Combinations" value={stats.totalCombinations.toLocaleString()} />
+            <StatCard label="Highest Total EV" value={`${stats.highestTotalEV > 0 ? '+' : ''}${(stats.highestTotalEV * 100).toFixed(1)}%`} />
+            <StatCard label="Average Total EV" value={`${stats.avgTotalEV > 0 ? '+' : ''}${(stats.avgTotalEV * 100).toFixed(1)}%`} />
+            <StatCard label="Highest Game EV" value={`${stats.highestGameEV > 0 ? '+' : ''}${(stats.highestGameEV * 100).toFixed(1)}%`} />
+            <StatCard label="Highest Pool EV" value={`${stats.highestPoolEV > 0 ? '+' : ''}${(stats.highestPoolEV * 100).toFixed(1)}%`} />
+          </div>
 
-                return (
-                  <tbody key={entry.id}>
-                    <tr
-                      className={`border-b border-border/40 transition-colors cursor-pointer hover:bg-muted/20 ${
-                        isHighestEV ? 'bg-amber-500/10 border-l-4 border-l-amber-400' : ''
-                      }`}
-                      onClick={() => setExpandedEntryId(isExpanded ? null : entry.id)}
+          {/* Table */}
+          <div className="rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm overflow-hidden flex flex-col">
+            <div className="overflow-x-auto flex-1">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 z-10 bg-muted/30 border-b border-border/40">
+                  <tr>
+                    <th
+                      className="px-4 py-3 text-left font-semibold text-foreground cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => handleSort('entry')}
                     >
-                      <td className="px-4 py-3">
-                        <code className="text-sm text-muted-foreground">{formatPoolEntry(entry.picks)}</code>
-                      </td>
-                      <td className="px-4 py-3 text-right text-muted-foreground">
-                        {(entry.winProbability * 100).toFixed(1)}%
-                      </td>
-                      <td className="px-4 py-3 text-right text-muted-foreground">
-                        {(entry.winAt3 * 100).toFixed(1)}%
-                      </td>
-                      <td className="px-4 py-3 text-right text-muted-foreground">
-                        {entry.expectedWinners.toFixed(2)}
-                      </td>
-                      <td className="px-4 py-3 text-right text-muted-foreground">
-                        ${entry.expectedPayout.toFixed(2)}
-                      </td>
-                      <td className={`px-4 py-3 text-right font-medium ${entry.poolEV > 0 ? 'text-emerald-400' : entry.poolEV < 0 ? 'text-red-400' : 'text-muted-foreground'}`}>
-                        {entry.poolEV > 0 ? '+' : ''}
-                        {(entry.poolEV * 100).toFixed(1)}%
-                      </td>
-                      <td className={`px-4 py-3 text-right font-medium ${entry.gameEV > 0 ? 'text-emerald-400' : entry.gameEV < 0 ? 'text-red-400' : 'text-muted-foreground'}`}>
-                        {entry.gameEV > 0 ? '+' : ''}
-                        {(entry.gameEV * 100).toFixed(1)}%
-                      </td>
-                      <td className={`px-4 py-3 text-right font-semibold ${entry.totalEV > 0 ? 'text-emerald-400' : entry.totalEV < 0 ? 'text-red-400' : 'text-muted-foreground'}`}>
-                        {entry.totalEV > 0 ? '+' : ''}
-                        {(entry.totalEV * 100).toFixed(1)}%
-                      </td>
-                    </tr>
+                      <div className="flex items-center gap-2">
+                        Entry
+                        {sortColumn === 'entry' && (sortDirection === 'desc' ? <ChevronDown size={16} /> : <ChevronUp size={16} />)}
+                      </div>
+                    </th>
+                    <th
+                      className="px-4 py-3 text-right font-semibold text-foreground cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => handleSort('win4_4')}
+                    >
+                      <div className="flex items-center justify-end gap-2">
+                        4/4 Win %
+                        {sortColumn === 'win4_4' && (sortDirection === 'desc' ? <ChevronDown size={16} /> : <ChevronUp size={16} />)}
+                      </div>
+                    </th>
+                    <th
+                      className="px-4 py-3 text-right font-semibold text-foreground cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => handleSort('win3_4')}
+                    >
+                      <div className="flex items-center justify-end gap-2">
+                        3/4 Win %
+                        {sortColumn === 'win3_4' && (sortDirection === 'desc' ? <ChevronDown size={16} /> : <ChevronUp size={16} />)}
+                      </div>
+                    </th>
+                    <th
+                      className="px-4 py-3 text-right font-semibold text-foreground cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => handleSort('poolEV')}
+                    >
+                      <div className="flex items-center justify-end gap-2">
+                        Pool EV
+                        {sortColumn === 'poolEV' && (sortDirection === 'desc' ? <ChevronDown size={16} /> : <ChevronUp size={16} />)}
+                      </div>
+                    </th>
+                    <th
+                      className="px-4 py-3 text-right font-semibold text-foreground cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => handleSort('gameEV')}
+                    >
+                      <div className="flex items-center justify-end gap-2">
+                        Game EV
+                        {sortColumn === 'gameEV' && (sortDirection === 'desc' ? <ChevronDown size={16} /> : <ChevronUp size={16} />)}
+                      </div>
+                    </th>
+                    <th
+                      className="px-4 py-3 text-right font-semibold text-foreground cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => handleSort('totalEV')}
+                    >
+                      <div className="flex items-center justify-end gap-2">
+                        Total EV
+                        {sortColumn === 'totalEV' && (sortDirection === 'desc' ? <ChevronDown size={16} /> : <ChevronUp size={16} />)}
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedEntries.map((entry) => {
+                    const isExpanded = expandedEntryId === entry.id
+                    const isHighestEV = entry.id === highestTotalEVId
 
-                    {/* Expanded Row */}
-                    {isExpanded && (
-                      <tr className="border-b border-border/40 bg-muted/10">
-                        <td colSpan={8} className="px-4 py-4">
-                          <div className="space-y-4">
-                            {entry.picks.map((pick, idx) => (
-                              <div key={idx} className="space-y-1">
-                                <p className="text-sm font-semibold text-foreground">
-                                  Game {idx + 1}
-                                </p>
-                                <div className="ml-4 space-y-0.5 text-sm text-muted-foreground">
+                    return (
+                      <tbody key={entry.id}>
+                        <tr
+                          className={`border-b border-border/40 transition-colors cursor-pointer hover:bg-muted/20 ${
+                            isHighestEV ? 'bg-amber-500/10 border-l-4 border-l-amber-400' : ''
+                          }`}
+                          onClick={() => setExpandedEntryId(isExpanded ? null : entry.id)}
+                        >
+                          <td className="px-4 py-3">
+                            <code className="text-sm text-muted-foreground">{formatPoolEntry(entry.picks)}</code>
+                          </td>
+                          <td className="px-4 py-3 text-right text-muted-foreground">
+                            {(entry.winProbability * 100).toFixed(1)}%
+                          </td>
+                          <td className="px-4 py-3 text-right text-muted-foreground">
+                            {(entry.winAt3 * 100).toFixed(1)}%
+                          </td>
+                          <td className={`px-4 py-3 text-right font-medium ${entry.poolEV > 0 ? 'text-emerald-400' : entry.poolEV < 0 ? 'text-red-400' : 'text-muted-foreground'}`}>
+                            {entry.poolEV > 0 ? '+' : ''}
+                            {(entry.poolEV * 100).toFixed(1)}%
+                          </td>
+                          <td className={`px-4 py-3 text-right font-medium ${entry.gameEV > 0 ? 'text-emerald-400' : entry.gameEV < 0 ? 'text-red-400' : 'text-muted-foreground'}`}>
+                            {entry.gameEV > 0 ? '+' : ''}
+                            {(entry.gameEV * 100).toFixed(1)}%
+                          </td>
+                          <td className={`px-4 py-3 text-right font-semibold ${entry.totalEV > 0 ? 'text-emerald-400' : entry.totalEV < 0 ? 'text-red-400' : 'text-muted-foreground'}`}>
+                            {entry.totalEV > 0 ? '+' : ''}
+                            {(entry.totalEV * 100).toFixed(1)}%
+                          </td>
+                        </tr>
+
+                        {/* Expanded Row */}
+                        {isExpanded && (
+                          <tr className="border-b border-border/40 bg-muted/10">
+                            <td colSpan={6} className="px-4 py-4">
+                              <div className="space-y-4">
+                                {entry.picks.map((pick, idx) => (
+                                  <div key={idx} className="space-y-1">
+                                    <p className="text-sm font-semibold text-foreground">
+                                      Game {idx + 1}
+                                    </p>
+                                    <div className="ml-4 space-y-0.5 text-sm text-muted-foreground">
+                                      <p>
+                                        Pick: <span className="text-foreground font-medium">{pick.teamName}</span>
+                                      </p>
+                                      <p>
+                                        Wager: <span className="text-foreground font-medium">${pick.wager}</span>
+                                      </p>
+                                    </div>
+                                  </div>
+                                ))}
+
+                                <div className="border-t border-border/40 pt-4 mt-4 space-y-1 text-sm">
                                   <p>
-                                    Pick: <span className="text-foreground font-medium">{pick.teamName}</span>
+                                    Game EV:{' '}
+                                    <span className={`font-medium ${entry.gameEV > 0 ? 'text-emerald-400' : entry.gameEV < 0 ? 'text-red-400' : 'text-muted-foreground'}`}>
+                                      {entry.gameEV > 0 ? '+' : ''}
+                                      {(entry.gameEV * 100).toFixed(1)}%
+                                    </span>
                                   </p>
                                   <p>
-                                    Wager: <span className="text-foreground font-medium">${pick.wager}</span>
+                                    Pool EV:{' '}
+                                    <span className={`font-medium ${entry.poolEV > 0 ? 'text-emerald-400' : entry.poolEV < 0 ? 'text-red-400' : 'text-muted-foreground'}`}>
+                                      {entry.poolEV > 0 ? '+' : ''}
+                                      {(entry.poolEV * 100).toFixed(1)}%
+                                    </span>
+                                  </p>
+                                  <p>
+                                    Total EV:{' '}
+                                    <span className={`font-medium ${entry.totalEV > 0 ? 'text-emerald-400' : entry.totalEV < 0 ? 'text-red-400' : 'text-muted-foreground'}`}>
+                                      {entry.totalEV > 0 ? '+' : ''}
+                                      {(entry.totalEV * 100).toFixed(1)}%
+                                    </span>
                                   </p>
                                 </div>
                               </div>
-                            ))}
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
 
-                            <div className="border-t border-border/40 pt-4 mt-4 space-y-1 text-sm">
-                              <p>
-                                Game EV:{' '}
-                                <span className={`font-medium ${entry.gameEV > 0 ? 'text-emerald-400' : entry.gameEV < 0 ? 'text-red-400' : 'text-muted-foreground'}`}>
-                                  {entry.gameEV > 0 ? '+' : ''}
-                                  {(entry.gameEV * 100).toFixed(1)}%
-                                </span>
-                              </p>
-                              <p>
-                                Pool EV:{' '}
-                                <span className={`font-medium ${entry.poolEV > 0 ? 'text-emerald-400' : entry.poolEV < 0 ? 'text-red-400' : 'text-muted-foreground'}`}>
-                                  {entry.poolEV > 0 ? '+' : ''}
-                                  {(entry.poolEV * 100).toFixed(1)}%
-                                </span>
-                              </p>
-                              <p>
-                                Total EV:{' '}
-                                <span className={`font-medium ${entry.totalEV > 0 ? 'text-emerald-400' : entry.totalEV < 0 ? 'text-red-400' : 'text-muted-foreground'}`}>
-                                  {entry.totalEV > 0 ? '+' : ''}
-                                  {(entry.totalEV * 100).toFixed(1)}%
-                                </span>
-                              </p>
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Footer */}
-        <div className="px-4 py-3 border-t border-border/40 bg-muted/5 text-sm text-muted-foreground">
-          Showing {sortedEntries.length} of {allEntries.length} entries
-        </div>
-      </div>
+            {/* Footer */}
+            <div className="px-4 py-3 border-t border-border/40 bg-muted/5 text-sm text-muted-foreground">
+              Showing {sortedEntries.length} of {allEntries.length} entries
+            </div>
+          </div>
+        </>
+      )}
     </>
   )
 }

@@ -1,24 +1,11 @@
-import { americanToProbability, americanToDecimal, isValidAmericanOdds } from './odds'
-
-const PINNACLE_WEIGHT = 0.6
-const BALLPARK_WEIGHT = 0.4
-
 export interface Game {
   id: string
-  team1Name: string
-  team2Name: string
-  team1Odds: number
-  team2Odds: number
-  ballparkWinPercent: number
-  realTeam1Odds: number
-  realTeam2Odds: number
-}
-
-export interface GameEVResult {
-  team1_0Bet: number | null
-  team1_100Bet: number | null
-  team2_0Bet: number | null
-  team2_100Bet: number | null
+  teamAName: string
+  teamBName: string
+  teamAOdds: number    // American odds (e.g., -110, +150)
+  teamBOdds: number    // American odds (e.g., -110, +150)
+  teamAPercent: number // Probability % (e.g., 55 for 55%)
+  teamBPercent: number // Probability % (e.g., 45 for 45%)
 }
 
 export interface PickOption {
@@ -32,80 +19,42 @@ export interface PoolEntry {
   id: string
   picks: PickOption[]
   gameEV: number
-  poolEV: number // placeholder
+  poolEV: number
   totalEV: number
-  winProbability: number // all 0-bet picks win
-  winAt3: number // probability of winning at least 3 out of 4 games
-  expectedWinners: number // expected number of games won
-  expectedPayout: number // expected payout from $100 bets
+  winProbability: number  // probability of all 0-bet picks winning (4/4)
+  winAt3: number          // probability of winning 3 or 4
 }
 
 /**
- * Calculate moneyline EV for a single game
- * Returns all four possible outcomes
+ * Calculate EV from American odds and probability
+ * Returns { ev100: EV for $100 bet, ev0: probability (0% bet baseline) }
  */
-export function calculateGameEV(game: Game): GameEVResult {
-  const { team1Odds, team2Odds, ballparkWinPercent, realTeam1Odds, realTeam2Odds } = game
+export function calculateEVFromOdds(
+  americanOdds: number,
+  probabilityPercent: number,
+): { ev100: number; ev0: number } {
+  const probWin = probabilityPercent / 100
+  const probLose = 1 - probWin
 
-  // Validate odds
-  if (!isValidAmericanOdds(team1Odds) || !isValidAmericanOdds(team2Odds)) {
-    return {
-      team1_0Bet: null,
-      team1_100Bet: null,
-      team2_0Bet: null,
-      team2_100Bet: null,
-    }
+  let ev100 = 0
+  if (americanOdds > 0) {
+    // Positive odds: +150 means $150 profit on $100 bet
+    ev100 = probWin * americanOdds - probLose * 100
+  } else {
+    // Negative odds: -150 means need $150 bet to win $100
+    const absOdds = Math.abs(americanOdds)
+    ev100 = probWin * 100 - probLose * absOdds
   }
 
-  // Validate ballpark %
-  if (!Number.isFinite(ballparkWinPercent) || ballparkWinPercent <= 0 || ballparkWinPercent >= 100) {
-    return {
-      team1_0Bet: null,
-      team1_100Bet: null,
-      team2_0Bet: null,
-      team2_100Bet: null,
-    }
-  }
-
-  // Calculate probabilities
-  const p1 = americanToProbability(team1Odds)
-  const p2 = americanToProbability(team2Odds)
-  const noVig = p1 / (p1 + p2)
-  const weighted = PINNACLE_WEIGHT * noVig + BALLPARK_WEIGHT * (ballparkWinPercent / 100)
-
-  // Calculate EV for each outcome
-  let team1_0Bet: number | null = null
-  let team1_100Bet: number | null = null
-  let team2_0Bet: number | null = null
-  let team2_100Bet: number | null = null
-
-  if (isValidAmericanOdds(realTeam1Odds)) {
-    team1_100Bet = weighted * americanToDecimal(realTeam1Odds) - 1
-    team1_0Bet = weighted // 0 bet uses pure probability
-  }
-
-  if (isValidAmericanOdds(realTeam2Odds)) {
-    team2_100Bet = (1 - weighted) * americanToDecimal(realTeam2Odds) - 1
-    team2_0Bet = 1 - weighted // 0 bet uses pure probability
-  }
+  // Normalize to percentage (if betting $100)
+  const ev100Pct = ev100
+  // For 0 bet, EV is just the probability
+  const ev0Pct = probWin * 100
 
   return {
-    team1_0Bet,
-    team1_100Bet,
-    team2_0Bet,
-    team2_100Bet,
+    ev100: ev100Pct,
+    ev0: ev0Pct,
   }
-}
-
-/**
- * Get EV value for a specific pick
- */
-export function getPickEV(evResult: GameEVResult, team: 1 | 2, wager: 0 | 100): number | null {
-  if (team === 1 && wager === 0) return evResult.team1_0Bet
-  if (team === 1 && wager === 100) return evResult.team1_100Bet
-  if (team === 2 && wager === 0) return evResult.team2_0Bet
-  if (team === 2 && wager === 100) return evResult.team2_100Bet
-  return null
 }
 
 /**
@@ -142,12 +91,10 @@ function calculateWinAt3(gameWinProbs: number[]): number {
 
 /**
  * Generate all possible pool entries (4^n combinations for n games)
+ * Takes games with odds and probabilities, calculates EVs internally
  */
 export function generatePoolEntries(games: Game[]): PoolEntry[] {
   const entries: PoolEntry[] = []
-
-  // Calculate EV for all games
-  const gameEVs = games.map(calculateGameEV)
 
   // Generate all possible combinations
   const numGames = games.length
@@ -156,10 +103,8 @@ export function generatePoolEntries(games: Game[]): PoolEntry[] {
   for (let i = 0; i < totalCombinations; i++) {
     const picks: PickOption[] = []
     let gameEV = 0
-    let winProb = 1
+    let poolEV = 0
     const gameWinProbs: number[] = []
-    let totalWagers = 0
-    let expectedPayout = 0
 
     // Decode this combination
     let remainder = i
@@ -168,75 +113,66 @@ export function generatePoolEntries(games: Game[]): PoolEntry[] {
       remainder = Math.floor(remainder / 4)
 
       const game = games[gameIdx]
-      const evResult = gameEVs[gameIdx]
 
-      let team: 1 | 2
+      // Calculate EVs from odds and probability
+      const teamAEv = calculateEVFromOdds(game.teamAOdds, game.teamAPercent)
+      const teamBEv = calculateEVFromOdds(game.teamBOdds, game.teamBPercent)
+
+      let teamName: string
       let wager: 0 | 100
+      let pickEV = 0
+      let gameWinProb = 0
 
       // Map 0-3 to the four options
       if (option === 0) {
-        team = 1
+        // Team A, no bet
+        teamName = game.teamAName
         wager = 0
+        pickEV = teamAEv.ev0
+        gameWinProb = game.teamAPercent / 100
       } else if (option === 1) {
-        team = 1
+        // Team A, $100 bet
+        teamName = game.teamAName
         wager = 100
+        pickEV = teamAEv.ev100
+        gameWinProb = game.teamAPercent / 100
       } else if (option === 2) {
-        team = 2
+        // Team B, no bet
+        teamName = game.teamBName
         wager = 0
+        pickEV = teamBEv.ev0
+        gameWinProb = game.teamBPercent / 100
       } else {
-        team = 2
+        // Team B, $100 bet
+        teamName = game.teamBName
         wager = 100
+        pickEV = teamBEv.ev100
+        gameWinProb = game.teamBPercent / 100
       }
 
       const pick: PickOption = {
-        teamName: team === 1 ? game.team1Name : game.team2Name,
+        teamName,
         gameId: game.id,
-        team,
+        team: option < 2 ? 1 : 2,
         wager,
       }
 
       picks.push(pick)
-
-      // Calculate EV and win probability for this pick
-      const pickEV = getPickEV(evResult, team, wager)
-      if (pickEV !== null) {
-        gameEV += pickEV
-
-        // Win probability (0 bet uses probability, 100 bet uses EV > 0 as indication)
-        if (wager === 0) {
-          winProb *= team === 1 ? evResult.team1_0Bet || 0 : evResult.team2_0Bet || 0
-        }
-      }
-
-      // Get game win probability for this pick
-      const gameWinProb = team === 1 ? evResult.team1_0Bet || 0 : evResult.team2_0Bet || 0
+      gameEV += pickEV
       gameWinProbs.push(gameWinProb)
-
-      // Calculate expected payout for $100 bets
-      if (wager === 100) {
-        totalWagers += 100
-        if (isValidAmericanOdds(team === 1 ? game.realTeam1Odds : game.realTeam2Odds)) {
-          const odds = team === 1 ? game.realTeam1Odds : game.realTeam2Odds
-          const decimal = americanToDecimal(odds)
-          const profit = (decimal - 1) * 100
-          expectedPayout += gameWinProb * profit
-        }
-      }
     }
 
     const winAt3 = numGames === 4 ? calculateWinAt3(gameWinProbs) : 0
-    const expectedWinners = gameWinProbs.reduce((sum, p) => sum + p, 0)
+    const winProb = gameWinProbs.reduce((product, p) => product * p, 1)
 
     const entry: PoolEntry = {
       id: i.toString(),
       picks,
       gameEV,
-      poolEV: 0, // placeholder
-      totalEV: gameEV + 0, // gameEV + poolEV
+      poolEV,
+      totalEV: gameEV + poolEV,
       winProbability: winProb,
       winAt3,
-      expectedWinners,
-      expectedPayout,
     }
 
     entries.push(entry)
