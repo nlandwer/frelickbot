@@ -34,7 +34,10 @@ export interface PoolEntry {
   gameEV: number
   poolEV: number // placeholder
   totalEV: number
-  winProbability: number
+  winProbability: number // all 0-bet picks win
+  winAt3: number // probability of winning at least 3 out of 4 games
+  expectedWinners: number // expected number of games won
+  expectedPayout: number // expected payout from $100 bets
 }
 
 /**
@@ -106,6 +109,38 @@ export function getPickEV(evResult: GameEVResult, team: 1 | 2, wager: 0 | 100): 
 }
 
 /**
+ * Calculate probability of winning at least 3 out of 4 games
+ * given individual win probabilities for each game
+ */
+function calculateWinAt3(gameWinProbs: number[]): number {
+  if (gameWinProbs.length !== 4) return 0
+
+  let prob = 0
+  // Enumerate all 16 combinations (2^4)
+  for (let mask = 0; mask < 16; mask++) {
+    let wins = 0
+    let combinationProb = 1
+
+    for (let gameIdx = 0; gameIdx < 4; gameIdx++) {
+      const gameWins = (mask & (1 << gameIdx)) !== 0
+      if (gameWins) {
+        wins++
+        combinationProb *= gameWinProbs[gameIdx]
+      } else {
+        combinationProb *= 1 - gameWinProbs[gameIdx]
+      }
+    }
+
+    // Count combinations with 3 or 4 wins
+    if (wins >= 3) {
+      prob += combinationProb
+    }
+  }
+
+  return prob
+}
+
+/**
  * Generate all possible pool entries (4^n combinations for n games)
  */
 export function generatePoolEntries(games: Game[]): PoolEntry[] {
@@ -122,6 +157,9 @@ export function generatePoolEntries(games: Game[]): PoolEntry[] {
     const picks: PickOption[] = []
     let gameEV = 0
     let winProb = 1
+    const gameWinProbs: number[] = []
+    let totalWagers = 0
+    let expectedPayout = 0
 
     // Decode this combination
     let remainder = i
@@ -169,7 +207,25 @@ export function generatePoolEntries(games: Game[]): PoolEntry[] {
           winProb *= team === 1 ? evResult.team1_0Bet || 0 : evResult.team2_0Bet || 0
         }
       }
+
+      // Get game win probability for this pick
+      const gameWinProb = team === 1 ? evResult.team1_0Bet || 0 : evResult.team2_0Bet || 0
+      gameWinProbs.push(gameWinProb)
+
+      // Calculate expected payout for $100 bets
+      if (wager === 100) {
+        totalWagers += 100
+        if (isValidAmericanOdds(team === 1 ? game.realTeam1Odds : game.realTeam2Odds)) {
+          const odds = team === 1 ? game.realTeam1Odds : game.realTeam2Odds
+          const decimal = americanToDecimal(odds)
+          const profit = (decimal - 1) * 100
+          expectedPayout += gameWinProb * profit
+        }
+      }
     }
+
+    const winAt3 = numGames === 4 ? calculateWinAt3(gameWinProbs) : 0
+    const expectedWinners = gameWinProbs.reduce((sum, p) => sum + p, 0)
 
     const entry: PoolEntry = {
       id: i.toString(),
@@ -178,6 +234,9 @@ export function generatePoolEntries(games: Game[]): PoolEntry[] {
       poolEV: 0, // placeholder
       totalEV: gameEV + 0, // gameEV + poolEV
       winProbability: winProb,
+      winAt3,
+      expectedWinners,
+      expectedPayout,
     }
 
     entries.push(entry)
