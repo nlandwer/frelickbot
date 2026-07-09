@@ -1,9 +1,12 @@
 'use client'
 
+import { Suspense } from 'react'
+import { OddsContent } from '@/components/calc/odds-content'
+
 export default function SettingsOddsPage() {
   return (
-    <div className="flex items-center justify-center rounded-2xl border border-border bg-card shadow-lg shadow-black/20 py-16">
-      <p className="text-muted-foreground">Odds coming soon.</p>
-    </div>
+    <Suspense fallback={<div className="text-muted-foreground">Loading settings...</div>}>
+      <OddsContent />
+    </Suspense>
   )
 }

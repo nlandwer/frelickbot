@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { useSettings } from '@/lib/settings-context'
 import {
   americanToDecimal,
   americanToProbability,
@@ -19,6 +20,7 @@ const PINNACLE_WEIGHT = 0.6
 const BALLPARK_WEIGHT = 0.4
 
 export function MoneylineCalculator() {
+  const { useBallParkPalModel } = useSettings()
   const [team1, setTeam1] = useState('')
   const [team2, setTeam2] = useState('')
   const [ballpark, setBallpark] = useState('')
@@ -80,35 +82,37 @@ export function MoneylineCalculator() {
     <>
       <FieldGroup title="Inputs">
         <InputField
-          label="Team 1 Pinnacle Odds (American)"
+          label="Team 1 Odds"
           placeholder="-110"
           value={team1}
           onChange={setTeam1}
           error={errors.team1}
         />
         <InputField
-          label="Team 2 Pinnacle Odds (American)"
+          label="Team 2 Odds"
           placeholder="+105"
           value={team2}
           onChange={setTeam2}
           error={errors.team2}
         />
+        {useBallParkPalModel && (
+          <InputField
+            label="BallPark Team 1 Win %"
+            placeholder="52.5"
+            value={ballpark}
+            onChange={setBallpark}
+            error={errors.ballpark}
+          />
+        )}
         <InputField
-          label="BallPark Team 1 Win %"
-          placeholder="52.5"
-          value={ballpark}
-          onChange={setBallpark}
-          error={errors.ballpark}
-        />
-        <InputField
-          label="Real Team 1 Odds (American)"
+          label="Real Team 1 Odds"
           placeholder="+120"
           value={realTeam1Odds}
           onChange={setRealTeam1Odds}
           error={errors.realTeam1Odds}
         />
         <InputField
-          label="Real Team 2 Odds (American)"
+          label="Real Team 2 Odds"
           placeholder="-110"
           value={realTeam2Odds}
           onChange={setRealTeam2Odds}
@@ -165,6 +169,7 @@ export function MoneylineCalculator() {
 }
 
 export function TotalRunsCalculator() {
+  const { useBallParkPalModel } = useSettings()
   const [pinnacleOverOdds, setPinnacleOverOdds] = useState('')
   const [pinnacleUnderOdds, setPinnacleUnderOdds] = useState('')
   const [ballparkLowerOdds, setBallparkLowerOdds] = useState('')
@@ -234,20 +239,24 @@ export function TotalRunsCalculator() {
           onChange={setPinnacleUnderOdds}
           error={errors.pinnacleUnderOdds}
         />
-        <InputField
-          label="BallPark Lower Total Odds"
-          placeholder="-120"
-          value={ballparkLowerOdds}
-          onChange={setBallparkLowerOdds}
-          error={errors.ballparkLowerOdds}
-        />
-        <InputField
-          label="BallPark Higher Total Odds"
-          placeholder="+110"
-          value={ballparkHigherOdds}
-          onChange={setBallparkHigherOdds}
-          error={errors.ballparkHigherOdds}
-        />
+        {useBallParkPalModel && (
+          <>
+            <InputField
+              label="BallPark Lower Total Odds"
+              placeholder="-120"
+              value={ballparkLowerOdds}
+              onChange={setBallparkLowerOdds}
+              error={errors.ballparkLowerOdds}
+            />
+            <InputField
+              label="BallPark Higher Total Odds"
+              placeholder="+110"
+              value={ballparkHigherOdds}
+              onChange={setBallparkHigherOdds}
+              error={errors.ballparkHigherOdds}
+            />
+          </>
+        )}
       </FieldGroup>
 
       {result ? (
