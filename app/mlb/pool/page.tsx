@@ -153,104 +153,84 @@ export default function PoolOptimizerPage() {
       </div>
 
       {/* Input Section */}
-      <div className="mb-8 space-y-6">
+      <div className="mb-8 space-y-4">
         <h3 className="text-lg font-semibold text-foreground">Game Inputs</h3>
         
         {games.map((game, idx) => (
-          <div key={game.id} className="rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm p-6">
+          <div key={game.id} className="rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm p-4">
             {/* Game Header */}
-            <h4 className="mb-6 text-base font-semibold text-foreground">Game {idx + 1}</h4>
+            <h4 className="mb-3 text-sm font-semibold text-foreground">Game {idx + 1}</h4>
             
-            {/* Team Headers */}
-            <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="text-sm font-semibold text-emerald-400">Team A</div>
-              <div className="text-sm font-semibold text-emerald-400">Team B</div>
-            </div>
-
-            {/* Separator */}
-            <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="h-0.5 bg-border/40"></div>
-              <div className="h-0.5 bg-border/40"></div>
+            {/* Header Row with Team Labels */}
+            <div className="mb-3 grid gap-4" style={{ gridTemplateColumns: '120px 1fr 1fr' }}>
+              <div></div>
+              <div className="text-xs font-semibold text-emerald-400 text-center">Away Team</div>
+              <div className="text-xs font-semibold text-emerald-400 text-center">Home Team</div>
             </div>
 
             {/* Team Name Row */}
-            <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-xs font-medium text-muted-foreground uppercase tracking-wide">Team Name</label>
-                <input
-                  type="text"
-                  value={game.teamAName}
-                  onChange={(e) => handleGameNameChange(game.id, 'teamAName', e.target.value)}
-                  placeholder="e.g., CIN"
-                  className="w-full rounded border border-border/40 bg-muted/30 px-3 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
-                />
-              </div>
-              <div>
-                <label className="mb-2 block text-xs font-medium text-muted-foreground uppercase tracking-wide">Team Name</label>
-                <input
-                  type="text"
-                  value={game.teamBName}
-                  onChange={(e) => handleGameNameChange(game.id, 'teamBName', e.target.value)}
-                  placeholder="e.g., NYY"
-                  className="w-full rounded border border-border/40 bg-muted/30 px-3 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
-                />
-              </div>
+            <div className="mb-2 grid gap-4" style={{ gridTemplateColumns: '120px 1fr 1fr' }}>
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center">Team Name</label>
+              <input
+                type="text"
+                value={game.teamAName}
+                onChange={(e) => handleGameNameChange(game.id, 'teamAName', e.target.value)}
+                placeholder="e.g., CIN"
+                className="rounded border border-border/40 bg-muted/30 px-3 py-1.5 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
+              />
+              <input
+                type="text"
+                value={game.teamBName}
+                onChange={(e) => handleGameNameChange(game.id, 'teamBName', e.target.value)}
+                placeholder="e.g., NYY"
+                className="rounded border border-border/40 bg-muted/30 px-3 py-1.5 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
+              />
             </div>
 
             {/* Odds Row */}
-            <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-xs font-medium text-muted-foreground uppercase tracking-wide">Odds</label>
-                <input
-                  type="number"
-                  value={game.teamAOdds}
-                  onChange={(e) => handleGameChange(game.id, 'teamAOdds', e.target.value)}
-                  placeholder="-110"
-                  step="1"
-                  className="w-full rounded border border-border/40 bg-muted/30 px-3 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
-                />
-              </div>
-              <div>
-                <label className="mb-2 block text-xs font-medium text-muted-foreground uppercase tracking-wide">Odds</label>
-                <input
-                  type="number"
-                  value={game.teamBOdds}
-                  onChange={(e) => handleGameChange(game.id, 'teamBOdds', e.target.value)}
-                  placeholder="-110"
-                  step="1"
-                  className="w-full rounded border border-border/40 bg-muted/30 px-3 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
-                />
-              </div>
+            <div className="mb-2 grid gap-4" style={{ gridTemplateColumns: '120px 1fr 1fr' }}>
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center">Odds</label>
+              <input
+                type="number"
+                value={game.teamAOdds}
+                onChange={(e) => handleGameChange(game.id, 'teamAOdds', e.target.value)}
+                placeholder="-110"
+                step="1"
+                className="rounded border border-border/40 bg-muted/30 px-3 py-1.5 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
+              />
+              <input
+                type="number"
+                value={game.teamBOdds}
+                onChange={(e) => handleGameChange(game.id, 'teamBOdds', e.target.value)}
+                placeholder="-110"
+                step="1"
+                className="rounded border border-border/40 bg-muted/30 px-3 py-1.5 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
+              />
             </div>
 
             {/* Pick % Row */}
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-xs font-medium text-muted-foreground uppercase tracking-wide">Win %</label>
-                <input
-                  type="number"
-                  value={game.teamAPercent}
-                  onChange={(e) => handleGameChange(game.id, 'teamAPercent', e.target.value)}
-                  placeholder="50"
-                  step="1"
-                  min="0"
-                  max="100"
-                  className="w-full rounded border border-border/40 bg-muted/30 px-3 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
-                />
-              </div>
-              <div>
-                <label className="mb-2 block text-xs font-medium text-muted-foreground uppercase tracking-wide">Win %</label>
-                <input
-                  type="number"
-                  value={game.teamBPercent}
-                  onChange={(e) => handleGameChange(game.id, 'teamBPercent', e.target.value)}
-                  placeholder="50"
-                  step="1"
-                  min="0"
-                  max="100"
-                  className="w-full rounded border border-border/40 bg-muted/30 px-3 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
-                />
-              </div>
+            <div className="grid gap-4" style={{ gridTemplateColumns: '120px 1fr 1fr' }}>
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center">Pick %</label>
+              <input
+                type="number"
+                value={game.teamAPercent}
+                onChange={(e) => handleGameChange(game.id, 'teamAPercent', e.target.value)}
+                placeholder="50"
+                step="1"
+                min="0"
+                max="100"
+                className="rounded border border-border/40 bg-muted/30 px-3 py-1.5 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
+              />
+              <input
+                type="number"
+                value={game.teamBPercent}
+                onChange={(e) => handleGameChange(game.id, 'teamBPercent', e.target.value)}
+                placeholder="50"
+                step="1"
+                min="0"
+                max="100"
+                className="rounded border border-border/40 bg-muted/30 px-3 py-1.5 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
+              />
             </div>
           </div>
         ))}
