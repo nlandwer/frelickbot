@@ -1,5 +1,30 @@
 import { useState } from 'react'
 import { Check, Copy } from 'lucide-react'
+import { normalizeAmericanOddsInput } from '@/lib/odds'
+
+function focusNextInput(current: HTMLInputElement) {
+  const candidates = Array.from(
+    document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(
+      'input, textarea, select'
+    )
+  ).filter((el) => {
+    if ('disabled' in el && el.disabled) return false
+    if ('readOnly' in el && el.readOnly) return false
+    const style = window.getComputedStyle(el)
+    return style.display !== 'none' && style.visibility !== 'hidden'
+  })
+
+  const currentIndex = candidates.indexOf(current)
+  if (currentIndex === -1) return
+
+  const next = candidates[currentIndex + 1]
+  if (next) {
+    next.focus()
+    if (next instanceof HTMLInputElement) {
+      next.select()
+    }
+  }
+}
 
 export function InputField({
   label,
@@ -7,12 +32,16 @@ export function InputField({
   value,
   onChange,
   error,
+  inputMode = 'text',
+  autoFormatAmericanOdds = false,
 }: {
   label: string
   placeholder: string
   value?: string
   onChange?: (value: string) => void
   error?: string
+  inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode']
+  autoFormatAmericanOdds?: boolean
 }) {
   const editable = typeof onChange === 'function'
   return (
@@ -20,11 +49,25 @@ export function InputField({
       <label className="text-sm font-medium text-muted-foreground">{label}</label>
       <input
         type="text"
-        inputMode="decimal"
+        inputMode={inputMode}
         placeholder={placeholder}
         readOnly={!editable}
         value={editable ? value : undefined}
         onChange={editable ? (e) => onChange(e.target.value) : undefined}
+        onBlur={
+          editable && autoFormatAmericanOdds
+            ? (e) => onChange(normalizeAmericanOddsInput(e.target.value))
+            : undefined
+        }
+        onKeyDown={
+          editable
+            ? (e) => {
+                if (e.key !== 'Enter') return
+                e.preventDefault()
+                focusNextInput(e.currentTarget)
+              }
+            : undefined
+        }
         aria-invalid={error ? true : undefined}
         className={`h-11 w-full rounded-xl border bg-input/40 px-3.5 text-base text-foreground placeholder:text-muted-foreground/60 outline-none transition-colors focus:ring-2 ${
           error

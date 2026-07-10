@@ -1,8 +1,13 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { generatePoolEntries, formatPoolEntry, Game, PoolEntry } from '@/lib/pool-utils'
 import { ChevronUp, ChevronDown } from 'lucide-react'
+import {
+  isValidAmericanOdds,
+  normalizeAmericanOddsInput,
+  parseAmericanOddsInput,
+} from '@/lib/odds'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,6 +24,24 @@ const EMPTY_GAME: Game = {
   teamBPercent: 50,
 }
 
+function formatOddsForInput(value: number): string {
+  if (!Number.isFinite(value)) return ''
+  return value > 0 ? `+${Math.trunc(value)}` : `${Math.trunc(value)}`
+}
+
+function focusNextField(current: HTMLInputElement) {
+  const fields = Array.from(document.querySelectorAll<HTMLInputElement>('input')).filter(
+    (el) => !el.disabled && !el.readOnly
+  )
+  const currentIndex = fields.indexOf(current)
+  if (currentIndex < 0) return
+  const next = fields[currentIndex + 1]
+  if (next) {
+    next.focus()
+    next.select()
+  }
+}
+
 export default function PoolOptimizerPage() {
   const [games, setGames] = useState<Game[]>([
     { ...EMPTY_GAME, id: '1' },
@@ -30,6 +53,7 @@ export default function PoolOptimizerPage() {
   const [sortColumn, setSortColumn] = useState<SortColumn>('totalEV')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
   const [expandedEntryId, setExpandedEntryId] = useState<string | null>(null)
+  const resultsRef = useRef<HTMLDivElement | null>(null)
 
   // Generate entries only after calculate is pressed
   const allEntries = useMemo(() => {
@@ -135,6 +159,11 @@ export default function PoolOptimizerPage() {
   const handleCalculate = () => {
     setCalculated(true)
     setExpandedEntryId(null)
+    requestAnimationFrame(() => {
+      if (resultsRef.current) {
+        resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    })
   }
 
   const highestTotalEVId = sortedEntries.length > 0 
@@ -175,6 +204,11 @@ export default function PoolOptimizerPage() {
                 type="text"
                 value={game.teamAName}
                 onChange={(e) => handleGameNameChange(game.id, 'teamAName', e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key !== 'Enter') return
+                  e.preventDefault()
+                  focusNextField(e.currentTarget)
+                }}
                 placeholder="e.g., CIN"
                 className="rounded border border-border/40 bg-muted/30 px-3 py-1.5 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
               />
@@ -182,6 +216,11 @@ export default function PoolOptimizerPage() {
                 type="text"
                 value={game.teamBName}
                 onChange={(e) => handleGameNameChange(game.id, 'teamBName', e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key !== 'Enter') return
+                  e.preventDefault()
+                  focusNextField(e.currentTarget)
+                }}
                 placeholder="e.g., NYY"
                 className="rounded border border-border/40 bg-muted/30 px-3 py-1.5 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
               />
@@ -191,19 +230,59 @@ export default function PoolOptimizerPage() {
             <div className="mb-2 grid gap-4" style={{ gridTemplateColumns: '120px 1fr 1fr' }}>
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center">Odds</label>
               <input
-                type="number"
-                value={game.teamAOdds}
-                onChange={(e) => handleGameChange(game.id, 'teamAOdds', e.target.value)}
+                type="text"
+                inputMode="text"
+                defaultValue={formatOddsForInput(game.teamAOdds)}
+                onChange={(e) => {
+                  const parsed = parseAmericanOddsInput(e.target.value)
+                  if (Number.isFinite(parsed) && isValidAmericanOdds(parsed)) {
+                    handleGameChange(game.id, 'teamAOdds', parsed)
+                  }
+                }}
+                onBlur={(e) => {
+                  const normalized = normalizeAmericanOddsInput(e.target.value)
+                  e.currentTarget.value = normalized
+                  const parsed = parseAmericanOddsInput(normalized)
+                  if (Number.isFinite(parsed) && isValidAmericanOdds(parsed)) {
+                    handleGameChange(game.id, 'teamAOdds', parsed)
+                  } else {
+                    e.currentTarget.value = formatOddsForInput(game.teamAOdds)
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key !== 'Enter') return
+                  e.preventDefault()
+                  focusNextField(e.currentTarget)
+                }}
                 placeholder="-110"
-                step="1"
                 className="rounded border border-border/40 bg-muted/30 px-3 py-1.5 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
               />
               <input
-                type="number"
-                value={game.teamBOdds}
-                onChange={(e) => handleGameChange(game.id, 'teamBOdds', e.target.value)}
+                type="text"
+                inputMode="text"
+                defaultValue={formatOddsForInput(game.teamBOdds)}
+                onChange={(e) => {
+                  const parsed = parseAmericanOddsInput(e.target.value)
+                  if (Number.isFinite(parsed) && isValidAmericanOdds(parsed)) {
+                    handleGameChange(game.id, 'teamBOdds', parsed)
+                  }
+                }}
+                onBlur={(e) => {
+                  const normalized = normalizeAmericanOddsInput(e.target.value)
+                  e.currentTarget.value = normalized
+                  const parsed = parseAmericanOddsInput(normalized)
+                  if (Number.isFinite(parsed) && isValidAmericanOdds(parsed)) {
+                    handleGameChange(game.id, 'teamBOdds', parsed)
+                  } else {
+                    e.currentTarget.value = formatOddsForInput(game.teamBOdds)
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key !== 'Enter') return
+                  e.preventDefault()
+                  focusNextField(e.currentTarget)
+                }}
                 placeholder="-110"
-                step="1"
                 className="rounded border border-border/40 bg-muted/30 px-3 py-1.5 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
               />
             </div>
@@ -212,23 +291,29 @@ export default function PoolOptimizerPage() {
             <div className="grid gap-4" style={{ gridTemplateColumns: '120px 1fr 1fr' }}>
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center">Pick %</label>
               <input
-                type="number"
+                type="text"
+                inputMode="decimal"
                 value={game.teamAPercent}
                 onChange={(e) => handleGameChange(game.id, 'teamAPercent', e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key !== 'Enter') return
+                  e.preventDefault()
+                  focusNextField(e.currentTarget)
+                }}
                 placeholder="50"
-                step="1"
-                min="0"
-                max="100"
                 className="rounded border border-border/40 bg-muted/30 px-3 py-1.5 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
               />
               <input
-                type="number"
+                type="text"
+                inputMode="decimal"
                 value={game.teamBPercent}
                 onChange={(e) => handleGameChange(game.id, 'teamBPercent', e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key !== 'Enter') return
+                  e.preventDefault()
+                  focusNextField(e.currentTarget)
+                }}
                 placeholder="50"
-                step="1"
-                min="0"
-                max="100"
                 className="rounded border border-border/40 bg-muted/30 px-3 py-1.5 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
               />
             </div>
@@ -239,7 +324,7 @@ export default function PoolOptimizerPage() {
         <div className="flex justify-center pt-4">
           <button
             onClick={handleCalculate}
-            className="rounded-lg bg-gradient-to-r from-purple-500 to-emerald-400 px-8 py-3 font-semibold text-white hover:shadow-lg hover:shadow-purple-500/50 transition-all hover:scale-105"
+            className="min-h-12 w-full rounded-lg bg-gradient-to-r from-purple-500 to-emerald-400 px-8 py-3 font-semibold text-white transition-all hover:scale-105 hover:shadow-lg hover:shadow-purple-500/50 sm:w-auto"
           >
             Calculate Results
           </button>
@@ -248,7 +333,7 @@ export default function PoolOptimizerPage() {
 
       {/* Results Section - Only shown after calculate */}
       {calculated && (
-        <>
+        <div ref={resultsRef}>
           {/* Statistics Cards */}
           <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
             <StatCard label="Total Combinations" value={stats.totalCombinations.toLocaleString()} />
@@ -266,7 +351,7 @@ export default function PoolOptimizerPage() {
                 className="grid gap-0 px-4 py-3 text-sm font-semibold text-foreground"
                 style={{
                   gridTemplateColumns: '70px 220px 110px 110px 110px 110px 110px',
-                  minWidth: 'fit-content'
+                  minWidth: '840px'
                 }}
               >
                 <div className="flex items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors rounded px-1 py-1" onClick={() => handleSort('entry')}>
@@ -326,7 +411,7 @@ export default function PoolOptimizerPage() {
                         }`}
                         style={{
                           gridTemplateColumns: '70px 220px 110px 110px 110px 110px 110px',
-                          minWidth: 'fit-content'
+                          minWidth: '840px'
                         }}
                         onClick={() => setExpandedEntryId(isExpanded ? null : entry.id)}
                       >
@@ -334,7 +419,7 @@ export default function PoolOptimizerPage() {
                           {rank + 1}
                         </div>
                         <div className="flex items-center overflow-hidden">
-                          <code className="text-sm text-muted-foreground truncate" title={formatPoolEntry(entry.picks)}>
+                          <code className="max-w-[210px] truncate whitespace-nowrap text-sm text-muted-foreground" title={formatPoolEntry(entry.picks)}>
                             {formatPoolEntry(entry.picks)}
                           </code>
                         </div>
@@ -415,7 +500,7 @@ export default function PoolOptimizerPage() {
               Showing {sortedEntries.length} of {allEntries.length} entries
             </div>
           </div>
-        </>
+        </div>
       )}
     </>
   )

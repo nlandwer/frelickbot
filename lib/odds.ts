@@ -5,6 +5,21 @@ export function isValidAmericanOdds(value: number): boolean {
   return Number.isFinite(value) && (value >= 100 || value <= -100)
 }
 
+/** Parse an American-odds input string into a number (supports +105, 105, -110). */
+export function parseAmericanOddsInput(value: string): number {
+  const trimmed = value.trim()
+  if (trimmed === '') return Number.NaN
+  return Number.parseFloat(trimmed)
+}
+
+/** Add a leading + for unsigned positive odds on blur (e.g., 110 -> +110). */
+export function normalizeAmericanOddsInput(value: string): string {
+  const trimmed = value.trim()
+  if (trimmed === '') return ''
+  if (/^\d+$/.test(trimmed)) return `+${trimmed}`
+  return trimmed
+}
+
 /** Convert American odds to implied probability (0..1). */
 export function americanToProbability(odds: number): number {
   if (odds > 0) return 100 / (odds + 100)

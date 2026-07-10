@@ -45,7 +45,7 @@ export function CalculatorSection({
         />
       </button>
       {open && (
-        <div className="flex flex-col gap-5 border-t border-border px-4 pb-5 pt-5">
+        <div className="flex flex-col gap-5 border-t border-border px-3 pb-4 pt-4 sm:px-4 sm:pb-5 sm:pt-5">
           {children}
         </div>
       )}

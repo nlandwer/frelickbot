@@ -93,12 +93,12 @@ export function DashboardHeader() {
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border/40">
       {/* Title Bar with Grid Layout */}
-      <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-4 px-4 py-5">
+      <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-3 px-3 py-4 sm:gap-4 sm:px-4 sm:py-5">
         {/* Left Column - Empty */}
         <div />
         
         {/* Center Column - Logo and Primary Navigation */}
-        <div className="flex flex-col items-center gap-4">
+        <div className="flex flex-col items-center gap-3 sm:gap-4">
           {/* Centered Logo */}
           <Link href="/" className="inline-block transition-opacity hover:opacity-80">
             <Image
@@ -117,7 +117,7 @@ export function DashboardHeader() {
 
           {/* Primary Navigation */}
           <nav aria-label="Main navigation" className="w-full">
-            <ul className="flex gap-1 py-1 justify-center">
+            <ul className="flex flex-wrap justify-center gap-2 py-1">
               {primaryTabs.map((tab) => {
                 const isActive = tab.id === active
                 return (
@@ -125,7 +125,7 @@ export function DashboardHeader() {
                     <Link
                       href={tab.href}
                       aria-current={isActive ? 'page' : undefined}
-                      className={`rounded-lg px-4 py-2.5 text-sm transition-all duration-200 ${
+                      className={`inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm transition-all duration-200 sm:px-4 sm:py-2.5 ${
                         isActive
                           ? 'bg-primary/15 font-semibold text-primary shadow-sm shadow-primary/20'
                           : 'font-medium text-muted-foreground hover:text-foreground hover:bg-primary/5'
@@ -141,25 +141,25 @@ export function DashboardHeader() {
         </div>
         
         {/* Right Column - Icons */}
-        <div className="flex justify-end gap-2">
+        <div className="flex justify-end gap-1.5 sm:gap-2">
           <button
             type="button"
             aria-label="Notifications"
-            className="p-2 rounded-lg text-muted-foreground hover:text-foreground transition-colors hover:bg-primary/10"
+            className="inline-flex size-11 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground"
           >
             <Bell className="size-5" />
           </button>
           <button
             type="button"
             aria-label="Settings"
-            className="p-2 rounded-lg text-muted-foreground hover:text-foreground transition-colors hover:bg-primary/10"
+            className="inline-flex size-11 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground"
           >
             <Settings className="size-5" />
           </button>
           <button
             type="button"
             aria-label="Profile"
-            className="p-2 rounded-lg text-muted-foreground hover:text-foreground transition-colors hover:bg-primary/10"
+            className="inline-flex size-11 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground"
           >
             <User className="size-5" />
           </button>
@@ -188,7 +188,7 @@ interface SecondaryNavProps {
 
 function SecondaryNav({ items, active }: SecondaryNavProps) {
   return (
-    <ul className="flex flex-wrap justify-center gap-1 py-3 px-4 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <ul className="flex flex-wrap justify-center gap-1 px-3 py-2 sm:px-4 sm:py-3">
       {items.map((item) => {
         const isActive = active.startsWith(item.href)
         return (
@@ -196,7 +196,7 @@ function SecondaryNav({ items, active }: SecondaryNavProps) {
             <Link
               href={item.href}
               aria-current={isActive ? 'page' : undefined}
-              className={`rounded-full px-3.5 py-1.5 text-sm transition-all duration-200 ${
+              className={`inline-flex min-h-11 items-center rounded-full px-3.5 py-1.5 text-sm transition-all duration-200 ${
                 isActive
                   ? 'bg-primary/15 font-bold text-primary'
                   : 'font-medium text-muted-foreground hover:text-foreground hover:bg-primary/5'

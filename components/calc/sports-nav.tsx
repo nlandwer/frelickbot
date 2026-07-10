@@ -24,7 +24,7 @@ export function SportsNav({
 }) {
   return (
     <nav aria-label="Sports" className="border-t border-border/60">
-      <ul className="mx-auto flex max-w-6xl flex-wrap justify-center gap-1 overflow-x-auto px-4 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <ul className="mx-auto flex max-w-6xl flex-wrap justify-center gap-1 px-3 py-2 sm:px-4">
         {SPORTS.map((sport) => {
           const selected = sport === active
           return (
@@ -33,7 +33,7 @@ export function SportsNav({
                 type="button"
                 onClick={() => onSelect(sport)}
                 aria-current={selected ? 'true' : undefined}
-                className={`rounded-full px-3.5 py-1.5 text-sm transition-colors ${
+                className={`inline-flex min-h-11 items-center rounded-full px-3.5 py-1.5 text-sm transition-colors ${
                   selected
                     ? 'bg-primary/15 font-bold text-primary'
                     : 'font-medium text-muted-foreground hover:text-foreground'

@@ -1,12 +1,12 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSettings } from '@/lib/settings-context'
 import {
   americanToProbability,
-  formatAmerican,
   formatPercent,
   isValidAmericanOdds,
+  parseAmericanOddsInput,
   probabilityToAmerican,
 } from '@/lib/odds'
 import {
@@ -52,11 +52,13 @@ export function MoneylineCalculator() {
   const [team2, setTeam2] = useState('')
   const [realTeam1Odds, setRealTeam1Odds] = useState('')
   const [realTeam2Odds, setRealTeam2Odds] = useState('')
+  const resultsRef = useRef<HTMLDivElement | null>(null)
+  const hadResultRef = useRef(false)
 
-  const odds1 = Number.parseFloat(team1)
-  const odds2 = Number.parseFloat(team2)
-  const realT1 = Number.parseFloat(realTeam1Odds)
-  const realT2 = Number.parseFloat(realTeam2Odds)
+  const odds1 = parseAmericanOddsInput(team1)
+  const odds2 = parseAmericanOddsInput(team2)
+  const realT1 = parseAmericanOddsInput(realTeam1Odds)
+  const realT2 = parseAmericanOddsInput(realTeam2Odds)
 
   const errors = {
     team1:
@@ -131,22 +133,27 @@ export function MoneylineCalculator() {
     }
   }, [odds1, odds2, realT1, realT2, useBallParkPalModel])
 
+  useEffect(() => {
+    if (result && !hadResultRef.current && resultsRef.current) {
+      resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+    hadResultRef.current = Boolean(result)
+  }, [result])
+
   return (
     <>
       <FieldGroup title="Inputs">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70 md:hidden">
+          Game 1 · Team 1
+        </p>
         <InputField
           label="Team 1 Odds"
           placeholder="-110"
           value={team1}
           onChange={setTeam1}
           error={errors.team1}
-        />
-        <InputField
-          label="Team 2 Odds"
-          placeholder="+105"
-          value={team2}
-          onChange={setTeam2}
-          error={errors.team2}
+          inputMode="text"
+          autoFormatAmericanOdds
         />
         <InputField
           label="Real Team 1 Odds"
@@ -154,6 +161,21 @@ export function MoneylineCalculator() {
           value={realTeam1Odds}
           onChange={setRealTeam1Odds}
           error={errors.realTeam1Odds}
+          inputMode="text"
+          autoFormatAmericanOdds
+        />
+        <div className="my-1 h-px bg-border/60 md:hidden" />
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70 md:hidden">
+          Team 2
+        </p>
+        <InputField
+          label="Team 2 Odds"
+          placeholder="+105"
+          value={team2}
+          onChange={setTeam2}
+          error={errors.team2}
+          inputMode="text"
+          autoFormatAmericanOdds
         />
         <InputField
           label="Real Team 2 Odds"
@@ -161,11 +183,13 @@ export function MoneylineCalculator() {
           value={realTeam2Odds}
           onChange={setRealTeam2Odds}
           error={errors.realTeam2Odds}
+          inputMode="text"
+          autoFormatAmericanOdds
         />
       </FieldGroup>
 
       {result ? (
-        <>
+        <div ref={resultsRef} className="space-y-5">
           <FieldGroup title="Outputs">
             <OutputRow
               label="Team 1 No-Vig Probability"
@@ -209,7 +233,7 @@ export function MoneylineCalculator() {
             })
           })()}
         </FieldGroup>
-        </>
+        </div>
       ) : null}
     </>
   )
@@ -218,9 +242,11 @@ export function MoneylineCalculator() {
 export function TotalRunsCalculator() {
   const [overOdds, setOverOdds] = useState('')
   const [underOdds, setUnderOdds] = useState('')
+  const resultsRef = useRef<HTMLDivElement | null>(null)
+  const hadResultRef = useRef(false)
 
-  const over = Number.parseFloat(overOdds)
-  const under = Number.parseFloat(underOdds)
+  const over = parseAmericanOddsInput(overOdds)
+  const under = parseAmericanOddsInput(underOdds)
 
   const errors = {
     overOdds:
@@ -263,6 +289,13 @@ export function TotalRunsCalculator() {
     }
   }, [over, under])
 
+  useEffect(() => {
+    if (result && !hadResultRef.current && resultsRef.current) {
+      resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+    hadResultRef.current = Boolean(result)
+  }, [result])
+
   return (
     <>
       <FieldGroup title="Inputs">
@@ -272,6 +305,8 @@ export function TotalRunsCalculator() {
           value={overOdds}
           onChange={setOverOdds}
           error={errors.overOdds}
+          inputMode="text"
+          autoFormatAmericanOdds
         />
         <InputField
           label="Under Odds"
@@ -279,11 +314,13 @@ export function TotalRunsCalculator() {
           value={underOdds}
           onChange={setUnderOdds}
           error={errors.underOdds}
+          inputMode="text"
+          autoFormatAmericanOdds
         />
       </FieldGroup>
 
       {result ? (
-        <>
+        <div ref={resultsRef} className="space-y-5">
           <FieldGroup title="Outputs">
             <OutputRow
               label="Over No-Vig Probability"
@@ -323,7 +360,7 @@ export function TotalRunsCalculator() {
               })
             })()}
           </FieldGroup>
-        </>
+        </div>
       ) : null}
     </>
   )
