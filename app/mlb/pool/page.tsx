@@ -18,10 +18,10 @@ const EMPTY_GAME: Game = {
   id: '',
   teamAName: '',
   teamBName: '',
-  teamAOdds: -110,
-  teamBOdds: -110,
-  teamAPercent: 50,
-  teamBPercent: 50,
+  teamAOdds: Number.NaN,
+  teamBOdds: Number.NaN,
+  teamAPercent: Number.NaN,
+  teamBPercent: Number.NaN,
 }
 
 function formatOddsForInput(value: number): string {
@@ -137,11 +137,21 @@ export default function PoolOptimizerPage() {
     }
   }
 
-  const handleGameChange = (gameId: string, field: string, value: string | number) => {
+  const handleGameChange = (
+    gameId: string,
+    field: 'teamAOdds' | 'teamBOdds' | 'teamAPercent' | 'teamBPercent',
+    value: string | number
+  ) => {
     setGames(games.map(g => {
       if (g.id === gameId) {
-        const numValue = typeof value === 'string' ? parseFloat(value) || 0 : value
-        return { ...g, [field]: numValue }
+        const numValue =
+          typeof value === 'string'
+            ? value.trim() === ''
+              ? Number.NaN
+              : parseFloat(value)
+            : value
+        const nextValue = Number.isFinite(numValue) ? numValue : g[field]
+        return { ...g, [field]: nextValue }
       }
       return g
     }))
@@ -254,7 +264,7 @@ export default function PoolOptimizerPage() {
                   e.preventDefault()
                   focusNextField(e.currentTarget)
                 }}
-                placeholder="-110"
+                placeholder="e.g., -110"
                 className="rounded border border-border/40 bg-muted/30 px-3 py-1.5 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
               />
               <input
@@ -282,7 +292,7 @@ export default function PoolOptimizerPage() {
                   e.preventDefault()
                   focusNextField(e.currentTarget)
                 }}
-                placeholder="-110"
+                placeholder="e.g., +105"
                 className="rounded border border-border/40 bg-muted/30 px-3 py-1.5 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
               />
             </div>
@@ -293,27 +303,27 @@ export default function PoolOptimizerPage() {
               <input
                 type="text"
                 inputMode="decimal"
-                value={game.teamAPercent}
+                value={Number.isFinite(game.teamAPercent) ? game.teamAPercent : ''}
                 onChange={(e) => handleGameChange(game.id, 'teamAPercent', e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key !== 'Enter') return
                   e.preventDefault()
                   focusNextField(e.currentTarget)
                 }}
-                placeholder="50"
+                placeholder="e.g., 42"
                 className="rounded border border-border/40 bg-muted/30 px-3 py-1.5 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
               />
               <input
                 type="text"
                 inputMode="decimal"
-                value={game.teamBPercent}
+                value={Number.isFinite(game.teamBPercent) ? game.teamBPercent : ''}
                 onChange={(e) => handleGameChange(game.id, 'teamBPercent', e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key !== 'Enter') return
                   e.preventDefault()
                   focusNextField(e.currentTarget)
                 }}
-                placeholder="50"
+                placeholder="e.g., 58"
                 className="rounded border border-border/40 bg-muted/30 px-3 py-1.5 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
               />
             </div>
