@@ -62,6 +62,7 @@ export function DashboardHeader() {
               <SecondaryNav 
                 items={[
                   { label: 'Pregames', href: '/mlb/pregames' },
+                  { label: 'Ingames', href: '/mlb/ingames' },
                   { label: 'PSPs', href: '/mlb/psps' },
                   { label: 'Dog of the Day', href: '/mlb/dog-of-the-day' },
                   { label: 'Pool', href: '/mlb/pool' },

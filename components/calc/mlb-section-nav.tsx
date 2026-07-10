@@ -8,6 +8,7 @@ export function MLBSectionNav() {
 
   const sections = [
     { href: '/mlb/pregames', label: 'Pregames' },
+    { href: '/mlb/ingames', label: 'Ingames' },
     { href: '/mlb/psps', label: 'PSPs' },
     { href: '/mlb/dog-of-the-day', label: 'Dog of the Day' },
     { href: '/mlb/pool', label: 'Pool' },
