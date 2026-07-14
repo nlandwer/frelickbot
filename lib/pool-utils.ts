@@ -6,6 +6,11 @@ export interface Game {
   teamBOdds: number    // American odds (e.g., -110, +150)
   teamAPercent: number // Probability % (e.g., 55 for 55%)
   teamBPercent: number // Probability % (e.g., 45 for 45%)
+  pollId?: string
+  gameId?: number
+  lockTime?: string
+  realTeamAOdds?: number
+  realTeamBOdds?: number
 }
 
 export interface PickOption {
@@ -24,6 +29,8 @@ export interface PoolEntry {
   winProbability: number  // probability of all 0-bet picks winning (4/4)
   winAt3: number          // probability of winning 3 or 4
 }
+
+type EquationSet = 'moneyline' | 'evenPayout'
 
 /**
  * Calculate EV from American odds and probability
@@ -54,6 +61,23 @@ export function calculateEVFromOdds(
   return {
     ev100: ev100Pct,
     ev0: ev0Pct,
+  }
+}
+
+function calculateEvenPayoutEV(probWin: number): { ev100: number; ev0: number } {
+  return {
+    ev100: (2 * probWin - 1) * 100,
+    ev0: probWin * 10,
+  }
+}
+
+function getNoVigProbabilitiesFromOdds(side1Odds: number, side2Odds: number) {
+  const side1Implied = side1Odds > 0 ? 100 / (side1Odds + 100) : Math.abs(side1Odds) / (Math.abs(side1Odds) + 100)
+  const side2Implied = side2Odds > 0 ? 100 / (side2Odds + 100) : Math.abs(side2Odds) / (Math.abs(side2Odds) + 100)
+  const sum = side1Implied + side2Implied
+  return {
+    side1NoVigProb: side1Implied / sum,
+    side2NoVigProb: side2Implied / sum,
   }
 }
 
@@ -93,8 +117,12 @@ function calculateWinAt3(gameWinProbs: number[]): number {
  * Generate all possible pool entries (4^n combinations for n games)
  * Takes games with odds and probabilities, calculates EVs internally
  */
-export function generatePoolEntries(games: Game[]): PoolEntry[] {
+export function generatePoolEntries(
+  games: Game[],
+  options?: { equationSet?: EquationSet }
+): PoolEntry[] {
   const entries: PoolEntry[] = []
+  const equationSet = options?.equationSet ?? 'moneyline'
 
   // Generate all possible combinations
   const numGames = games.length
@@ -114,9 +142,34 @@ export function generatePoolEntries(games: Game[]): PoolEntry[] {
 
       const game = games[gameIdx]
 
-      // Calculate EVs from odds and probability
-      const teamAEv = calculateEVFromOdds(game.teamAOdds, game.teamAPercent)
-      const teamBEv = calculateEVFromOdds(game.teamBOdds, game.teamBPercent)
+      const hasValidOdds = Number.isFinite(game.teamAOdds) && Number.isFinite(game.teamBOdds)
+      const hasValidPercents = Number.isFinite(game.teamAPercent) && Number.isFinite(game.teamBPercent)
+
+      let teamAWinProb = 0.5
+      let teamBWinProb = 0.5
+
+      if (equationSet === 'evenPayout' && hasValidOdds) {
+        const noVig = getNoVigProbabilitiesFromOdds(game.teamAOdds, game.teamBOdds)
+        teamAWinProb = noVig.side1NoVigProb
+        teamBWinProb = noVig.side2NoVigProb
+      } else if (hasValidPercents) {
+        const side1 = game.teamAPercent / 100
+        const side2 = game.teamBPercent / 100
+        const sum = side1 + side2
+        if (sum > 0) {
+          teamAWinProb = side1 / sum
+          teamBWinProb = side2 / sum
+        }
+      }
+
+      const teamAEv =
+        equationSet === 'evenPayout'
+          ? calculateEvenPayoutEV(teamAWinProb)
+          : calculateEVFromOdds(game.teamAOdds, game.teamAPercent)
+      const teamBEv =
+        equationSet === 'evenPayout'
+          ? calculateEvenPayoutEV(teamBWinProb)
+          : calculateEVFromOdds(game.teamBOdds, game.teamBPercent)
 
       let teamName: string
       let wager: 0 | 100
@@ -129,25 +182,25 @@ export function generatePoolEntries(games: Game[]): PoolEntry[] {
         teamName = game.teamAName
         wager = 0
         pickEV = teamAEv.ev0
-        gameWinProb = game.teamAPercent / 100
+        gameWinProb = equationSet === 'evenPayout' ? teamAWinProb : game.teamAPercent / 100
       } else if (option === 1) {
         // Team A, $100 bet
         teamName = game.teamAName
         wager = 100
         pickEV = teamAEv.ev100
-        gameWinProb = game.teamAPercent / 100
+        gameWinProb = equationSet === 'evenPayout' ? teamAWinProb : game.teamAPercent / 100
       } else if (option === 2) {
         // Team B, no bet
         teamName = game.teamBName
         wager = 0
         pickEV = teamBEv.ev0
-        gameWinProb = game.teamBPercent / 100
+        gameWinProb = equationSet === 'evenPayout' ? teamBWinProb : game.teamBPercent / 100
       } else {
         // Team B, $100 bet
         teamName = game.teamBName
         wager = 100
         pickEV = teamBEv.ev100
-        gameWinProb = game.teamBPercent / 100
+        gameWinProb = equationSet === 'evenPayout' ? teamBWinProb : game.teamBPercent / 100
       }
 
       const pick: PickOption = {

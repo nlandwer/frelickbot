@@ -30,6 +30,25 @@ function formatNumber(value: number): string {
   return `${value >= 0 ? '+' : ''}${value.toFixed(2)}`
 }
 
+function calculateTwoWayEvenPayoutFromOdds(side1Odds: number, side2Odds: number) {
+  const side1Prob = americanToProbability(side1Odds)
+  const side2Prob = americanToProbability(side2Odds)
+
+  const side1NoVigProb = side1Prob / (side1Prob + side2Prob)
+  const side2NoVigProb = side2Prob / (side1Prob + side2Prob)
+
+  return {
+    side1NoVigProb,
+    side2NoVigProb,
+    side1NoVigOdds: probabilityToAmerican(side1NoVigProb),
+    side2NoVigOdds: probabilityToAmerican(side2NoVigProb),
+    side1EV0: roundToTwo(side1NoVigProb * 10),
+    side1EV100: roundToTwo((2 * side1NoVigProb - 1) * 100),
+    side2EV0: roundToTwo(side2NoVigProb * 10),
+    side2EV100: roundToTwo((2 * side2NoVigProb - 1) * 100),
+  }
+}
+
 function getMoneylineModelProbabilities({
   team1NoVigProb,
   team2NoVigProb,
@@ -263,29 +282,17 @@ export function TotalRunsCalculator() {
     const valid = isValidAmericanOdds(over) && isValidAmericanOdds(under)
     if (!valid) return null
 
-    // Step 1: Convert sportsbook odds to implied probabilities.
-    const overProb = americanToProbability(over)
-    const underProb = americanToProbability(under)
-
-    // Step 2: Remove vig; these no-vig probabilities are the model probabilities.
-    const overNoVigProb = overProb / (overProb + underProb)
-    const underNoVigProb = underProb / (overProb + underProb)
-
-    // Step 3/4: Wager 0 uses fixed +10 on win; wager 100 is even-money +/-100.
-    const overEV0 = roundToTwo(overNoVigProb * 10)
-    const underEV0 = roundToTwo(underNoVigProb * 10)
-    const overEV100 = roundToTwo((2 * overNoVigProb - 1) * 100)
-    const underEV100 = roundToTwo((2 * underNoVigProb - 1) * 100)
+    const evenPayout = calculateTwoWayEvenPayoutFromOdds(over, under)
 
     return {
-      overNoVigProb,
-      underNoVigProb,
-      overNoVigOdds: probabilityToAmerican(overNoVigProb),
-      underNoVigOdds: probabilityToAmerican(underNoVigProb),
-      overEV0,
-      overEV100,
-      underEV0,
-      underEV100,
+      overNoVigProb: evenPayout.side1NoVigProb,
+      underNoVigProb: evenPayout.side2NoVigProb,
+      overNoVigOdds: evenPayout.side1NoVigOdds,
+      underNoVigOdds: evenPayout.side2NoVigOdds,
+      overEV0: evenPayout.side1EV0,
+      overEV100: evenPayout.side1EV100,
+      underEV0: evenPayout.side2EV0,
+      underEV100: evenPayout.side2EV100,
     }
   }, [over, under])
 
@@ -339,6 +346,109 @@ export function TotalRunsCalculator() {
                 { val: result.overEV100, label: 'Over Expected Value (100)' },
                 { val: result.underEV0, label: 'Under Expected Value (0)' },
                 { val: result.underEV100, label: 'Under Expected Value (100)' },
+              ]
+
+              const maxEV = Math.max(...values.map((item) => item.val))
+
+              return values.map((item, idx) => {
+                const isHighest = item.val === maxEV
+                const sign: 'pos' | 'neg' | 'none' =
+                  item.val > 0 ? 'pos' : item.val < 0 ? 'neg' : 'none'
+
+                return (
+                  <EvRow
+                    key={idx}
+                    label={item.label}
+                    value={formatNumber(item.val)}
+                    sign={sign}
+                    best={isHighest}
+                  />
+                )
+              })
+            })()}
+          </FieldGroup>
+        </div>
+      ) : null}
+    </>
+  )
+}
+
+export function SpreadCalculator() {
+  const [side1Odds, setSide1Odds] = useState('')
+  const [side2Odds, setSide2Odds] = useState('')
+  const resultsRef = useRef<HTMLDivElement | null>(null)
+  const hadResultRef = useRef(false)
+
+  const side1 = parseAmericanOddsInput(side1Odds)
+  const side2 = parseAmericanOddsInput(side2Odds)
+
+  const errors = {
+    side1Odds:
+      side1Odds.trim() !== '' && !isValidAmericanOdds(side1)
+        ? 'Enter valid odds (≥ +100 or ≤ -100)'
+        : undefined,
+    side2Odds:
+      side2Odds.trim() !== '' && !isValidAmericanOdds(side2)
+        ? 'Enter valid odds (≥ +100 or ≤ -100)'
+        : undefined,
+  }
+
+  const result = useMemo(() => {
+    const valid = isValidAmericanOdds(side1) && isValidAmericanOdds(side2)
+    if (!valid) return null
+    return calculateTwoWayEvenPayoutFromOdds(side1, side2)
+  }, [side1, side2])
+
+  useEffect(() => {
+    if (result && !hadResultRef.current && resultsRef.current) {
+      resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+    hadResultRef.current = Boolean(result)
+  }, [result])
+
+  return (
+    <>
+      <FieldGroup title="Inputs">
+        <InputField
+          label="Team 1 Odds"
+          placeholder="-110"
+          value={side1Odds}
+          onChange={setSide1Odds}
+          error={errors.side1Odds}
+          inputMode="text"
+          autoFormatAmericanOdds
+        />
+        <InputField
+          label="Team 2 Odds"
+          placeholder="-110"
+          value={side2Odds}
+          onChange={setSide2Odds}
+          error={errors.side2Odds}
+          inputMode="text"
+          autoFormatAmericanOdds
+        />
+      </FieldGroup>
+
+      {result ? (
+        <div ref={resultsRef} className="space-y-5">
+          <FieldGroup title="Outputs">
+            <OutputRow
+              label="Team 1 No-Vig Probability"
+              value={formatPercent(result.side1NoVigProb)}
+            />
+            <OutputRow
+              label="Team 2 No-Vig Probability"
+              value={formatPercent(result.side2NoVigProb)}
+            />
+          </FieldGroup>
+
+          <FieldGroup title="Expected Value">
+            {(() => {
+              const values = [
+                { val: result.side1EV0, label: 'Team 1 Expected Value (0)' },
+                { val: result.side1EV100, label: 'Team 1 Expected Value (100)' },
+                { val: result.side2EV0, label: 'Team 2 Expected Value (0)' },
+                { val: result.side2EV100, label: 'Team 2 Expected Value (100)' },
               ]
 
               const maxEV = Math.max(...values.map((item) => item.val))

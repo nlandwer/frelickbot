@@ -54,18 +54,19 @@ export function DashboardHeader() {
 
     switch (active) {
       case 'karma':
-        // For Karma, show sports first, then MLB sections if on MLB
+        // For Karma, show sports first, then mirrored section tabs for MLB and WNBA.
+        const showKarmaSections = activeSport === 'MLB' || activeSport === 'WNBA'
+        const sportBase = `/${activeSport.toLowerCase()}`
         return (
           <div className="space-y-2">
             <SportsNav active={activeSport} onSelect={handleSportSelect} />
-            {activeSport === 'MLB' && (
+            {showKarmaSections && (
               <SecondaryNav 
                 items={[
-                  { label: 'Pregames', href: '/mlb/pregames' },
-                  { label: 'Ingames', href: '/mlb/ingames' },
-                  { label: 'PSPs', href: '/mlb/psps' },
-                  { label: 'Dog of the Day', href: '/mlb/dog-of-the-day' },
-                  { label: 'Pool', href: '/mlb/pool' },
+                  { label: 'Pregames', href: `${sportBase}/pregames` },
+                  { label: 'Ingames', href: `${sportBase}/ingames` },
+                  { label: 'Dog of the Day', href: `${sportBase}/dog-of-the-day` },
+                  { label: 'Pool', href: `${sportBase}/pool` },
                 ]} 
                 active={pathname} 
               />
