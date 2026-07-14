@@ -13,21 +13,26 @@ type PostSummary = {
 }
 
 function parsePostSummaries(payload: unknown): PostSummary[] {
-  if (
-    !payload ||
-    typeof payload !== 'object' ||
-    !('latestDayContent' in payload) ||
-    !payload.latestDayContent ||
-    typeof payload.latestDayContent !== 'object' ||
-    (!('items' in payload.latestDayContent) || !Array.isArray(payload.latestDayContent.items)) &&
-    (!('content' in payload.latestDayContent) || !Array.isArray(payload.latestDayContent.content))
-  ) {
+  if (!payload || typeof payload !== 'object' || !('latestDayContent' in payload)) {
     return []
   }
 
-  const blocks = Array.isArray(payload.latestDayContent.items)
-    ? payload.latestDayContent.items
-    : payload.latestDayContent.content
+  const latestDayContent = payload.latestDayContent
+  if (!latestDayContent || typeof latestDayContent !== 'object') {
+    return []
+  }
+
+  const items = (latestDayContent as Record<string, unknown>)['items']
+  const content = (latestDayContent as Record<string, unknown>)['content']
+  if (!Array.isArray(items) && !Array.isArray(content)) {
+    return []
+  }
+
+  const blocks: unknown[] = Array.isArray(items)
+    ? items
+    : Array.isArray(content)
+      ? content
+      : []
   const summaries: PostSummary[] = []
 
   for (const block of blocks) {
@@ -123,6 +128,16 @@ async function fetchFirstOkJson(urls: string[]): Promise<{ status: number; body:
   return lastResult
 }
 
+function extractErrorMessage(body: unknown): string {
+  if (body && typeof body === 'object' && 'message' in body && typeof body.message === 'string') {
+    return body.message
+  }
+  if (typeof body === 'string' && body.trim() !== '') {
+    return body
+  }
+  return 'Unknown upstream error'
+}
+
 export async function GET(request: NextRequest) {
   const sportParam = request.nextUrl.searchParams.get('sport')
   const sport = (sportParam ?? '').trim().toLowerCase()
@@ -138,6 +153,12 @@ export async function GET(request: NextRequest) {
     ])
 
     if (homeResult.status !== 200) {
+      if (homeResult.status === 401 || homeResult.status === 403) {
+        return NextResponse.json(
+          { error: 'Real session invalid or expired. Update REAL_* environment values.' },
+          { status: 502 }
+        )
+      }
       return NextResponse.json({ error: 'Failed to resolve today pool from home endpoint' }, { status: 502 })
     }
 
@@ -154,6 +175,12 @@ export async function GET(request: NextRequest) {
     ])
 
     if (postResult.status !== 200) {
+      if (postResult.status === 401 || postResult.status === 403) {
+        return NextResponse.json(
+          { error: 'Real session invalid or expired. Update REAL_* environment values.' },
+          { status: 502 }
+        )
+      }
       return NextResponse.json({ error: 'Failed to resolve pool post details' }, { status: 502 })
     }
 
@@ -163,7 +190,10 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({ sport, id: poolId })
-  } catch {
-    return NextResponse.json({ error: 'Failed to resolve today pool id' }, { status: 502 })
+  } catch (error) {
+    return NextResponse.json(
+      { error: `Failed to resolve today pool id: ${extractErrorMessage(error)}` },
+      { status: 502 }
+    )
   }
 }

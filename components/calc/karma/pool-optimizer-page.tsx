@@ -8,7 +8,7 @@ import {
   normalizeAmericanOddsInput,
   parseAmericanOddsInput,
 } from '@/lib/odds'
-import { getTodayPool, PoolNotFoundError } from '@/services/realApi'
+import { getTodayPool, PoolNotFoundError, RealApiRequestError } from '@/services/realApi'
 
 type SortColumn = 'entry' | 'win4_4' | 'win3_4' | 'poolEV' | 'gameEV' | 'totalEV'
 type SortDirection = 'asc' | 'desc'
@@ -209,6 +209,8 @@ export function PoolOptimizerPage({
     } catch (error) {
       if (error instanceof PoolNotFoundError) {
         setLoadPoolError('No pool available today.')
+      } else if (error instanceof RealApiRequestError) {
+        setLoadPoolError(error.message)
       } else {
         setLoadPoolError('Unable to fetch pool data.')
       }

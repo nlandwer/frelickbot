@@ -50,7 +50,18 @@ async function getJson(url: string): Promise<unknown> {
   }
 
   if (!response.ok) {
-    throw new RealApiRequestError(`Request failed: ${response.status}`)
+    let errorMessage = `Request failed: ${response.status}`
+    try {
+      const body = await response.json()
+      if (isRecord(body) && typeof body.error === 'string' && body.error.trim() !== '') {
+        errorMessage = body.error
+      } else if (isRecord(body) && typeof body.message === 'string' && body.message.trim() !== '') {
+        errorMessage = body.message
+      }
+    } catch {
+      // Keep status-based fallback message.
+    }
+    throw new RealApiRequestError(errorMessage)
   }
 
   try {
